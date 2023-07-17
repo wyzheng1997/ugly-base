@@ -11,5 +11,5 @@ ugly-base
 
 ### 安装
 ```shell
-composer require wyzheng/ugly-base:dev-master
+composer require wyzheng/ugly-base:dev-main
 ```
