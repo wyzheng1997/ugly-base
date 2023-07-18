@@ -12,6 +12,10 @@ class AuthInfo extends Model
 {
     protected $guarded = [];
 
+    protected $casts = [
+        'payload' => 'json',
+    ];
+
     /**
      * 关联账号.
      */

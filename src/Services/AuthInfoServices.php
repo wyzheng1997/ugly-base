@@ -2,10 +2,12 @@
 
 namespace Ugly\Base\Services;
 
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Ugly\Base\Models\AuthInfo;
 
 class AuthInfoServices
@@ -120,5 +122,31 @@ class AuthInfoServices
         $lock->release();
 
         return $tokenAuthInfo;
+    }
+
+    /**
+     * 获取登录用户，如果没有登录，抛出异常.
+     *
+     * @throws HttpException
+     */
+    public static function loginUser(string $guard): Authenticatable
+    {
+        $user = self::tryLoginUser($guard);
+        if ($user) {
+            return $user;
+        }
+        abort(Response::HTTP_UNAUTHORIZED, '请先登录！');
+    }
+
+    /**
+     * 尝试获取登录用户，如果没有登录，返回null.
+     */
+    public static function tryLoginUser(string $guard): ?Authenticatable
+    {
+        if (auth($guard)->check()) {
+            return auth($guard)->user();
+        }
+
+        return null;
     }
 }
