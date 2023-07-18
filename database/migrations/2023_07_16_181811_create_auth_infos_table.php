@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('union_id')->nullable()->comment('认证union_id');
             $table->json('payload')->nullable()->comment('其他信息');
             $table->timestamps();
+            $table->unique(['auth_id', 'auth_type', 'type'], 'auth_unique');
         });
     }
 

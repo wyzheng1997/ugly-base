@@ -11,14 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('admins', function (Blueprint $table) {
-            $table->comment('管理员表');
-            $table->id();
-            $table->string('name')->comment('管理员名称');
-            $table->string('password')->unique()->comment('密码');
-            $table->timestamps();
-        });
-
         Schema::create('roles', function (Blueprint $table) {
             $table->comment('角色表');
             $table->id();
@@ -26,6 +18,7 @@ return new class extends Migration
             $table->string('slug')->comment('角色标识');
             $table->string('belongs_type')->comment('所属类型');
             $table->unsignedBigInteger('belongs_id')->comment('所属ID');
+            $table->unique(['slug', 'belongs_type', 'belongs_id'], 'slug_type_unique');
             $table->timestamps();
         });
 
@@ -37,21 +30,22 @@ return new class extends Migration
             $table->unsignedBigInteger('pid')->comment('父级ID');
             $table->string('belongs_type')->comment('所属类型');
             $table->timestamps();
+            $table->unique(['slug', 'belongs_type'], 'slug_type_unique');
         });
 
         Schema::create('role_has_permissions', function (Blueprint $table) {
             $table->comment('角色权限关联表');
             $table->unsignedBigInteger('role_id')->comment('角色ID');
             $table->unsignedBigInteger('permission_id')->comment('权限ID');
-            $table->unique(['role_id', 'permission_id']);
+            $table->unique(['role_id', 'permission_id'], 'role_permission_unique');
         });
 
-        Schema::create('account_has_roles', function (Blueprint $table) {
-            $table->comment('账号角色关联表');
+        Schema::create('role_assignments', function (Blueprint $table) {
+            $table->comment('角色分配表');
+            $table->unsignedBigInteger('role_id')->comment('角色ID');
             $table->unsignedBigInteger('belongs_id')->comment('所属ID');
             $table->string('belongs_type')->comment('所属类型');
-            $table->unsignedBigInteger('role_id')->comment('角色ID');
-            $table->unique(['role_id', 'permission_id']);
+            $table->unique(['role_id', 'belongs_type', 'belongs_id'], 'role_unique');
         });
     }
 
@@ -64,6 +58,6 @@ return new class extends Migration
         Schema::dropIfExists('roles');
         Schema::dropIfExists('permissions');
         Schema::dropIfExists('role_has_permissions');
-        Schema::dropIfExists('account_has_permissions');
+        Schema::dropIfExists('role_assignments');
     }
 };
