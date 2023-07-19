@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Ugly\Base\Exceptions\ApiCustomError;
+use Ugly\Base\Http\Resources\RoleResource;
 use Ugly\Base\Models\Permissions;
 use Ugly\Base\Models\Role;
 use Ugly\Base\Services\AuthInfoServices;
@@ -96,5 +97,21 @@ class RoleBaseController extends QuickFormController
             });
 
         });
+    }
+
+    /**
+     * 角色详情.
+     * @param $id
+     * @return JsonResponse
+     */
+    public function show($id): JsonResponse
+    {
+        $loginUser = AuthInfoServices::loginUser($this->guard);
+        $role = Role::with('permissions')
+            ->where('belongs_type', $loginUser->getRolePermissionType())
+            ->where('belongs_id', $loginUser->getRoleBelongId())
+            ->findOrFail($id);
+
+        return $this->success(RoleResource::make($role));
     }
 }
