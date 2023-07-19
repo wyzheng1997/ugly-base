@@ -101,7 +101,7 @@ class FormService
      *
      * @return $this
      */
-    public function setKey(int $id): static
+    public function setKey(int|string $id): static
     {
         $this->_id = $id;
 
