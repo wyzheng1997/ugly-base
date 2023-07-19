@@ -19,11 +19,11 @@ class QuickFormController extends Controller
      *
      * @throws \Throwable
      */
-    public function store(): JsonResponse
+    public function store(...$params): JsonResponse
     {
         try {
             DB::beginTransaction();
-            $model = $this->form()->setMode(FormService::MODE_CREATE)->save();
+            $model = $this->form(...$params)->setMode(FormService::MODE_CREATE)->save();
             DB::commit();
         } catch (ApiCustomError $e) {
             DB::rollBack();
@@ -44,11 +44,11 @@ class QuickFormController extends Controller
      *
      * @throws \Throwable
      */
-    public function update($id): JsonResponse
+    public function update($id, ...$params): JsonResponse
     {
         try {
             DB::beginTransaction();
-            $this->form()->setKey($id)->setMode(FormService::MODE_EDIT)->save();
+            $this->form(...$params)->setKey($id)->setMode(FormService::MODE_EDIT)->save();
             DB::commit();
 
             return $this->success(Response::HTTP_OK);
@@ -67,11 +67,11 @@ class QuickFormController extends Controller
      *
      * @throws \Throwable
      */
-    public function destroy($id): JsonResponse
+    public function destroy($id, ...$params): JsonResponse
     {
         DB::beginTransaction();
         try {
-            $this->form()->setMode(FormService::MODE_DELETE)->setKey($id)->delete();
+            $this->form(...$params)->setMode(FormService::MODE_DELETE)->setKey($id)->delete();
             DB::commit();
 
             return $this->success();
