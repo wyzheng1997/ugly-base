@@ -92,7 +92,7 @@ trait HasRoles
      */
     public function hasRole(string $role): bool
     {
-        return $this->allRoles()->contains('slug', $role);
+        return $this->allRoles()->contains($role);
     }
 
     /**
@@ -100,7 +100,7 @@ trait HasRoles
      */
     public function hasAnyRole(array $roles): bool
     {
-        return $this->allRoles()->pluck('slug')->intersect($roles)->isNotEmpty();
+        return $this->allRoles()->intersect($roles)->isNotEmpty();
     }
 
     /**
@@ -108,6 +108,6 @@ trait HasRoles
      */
     public function hasAllRole(array $roles): bool
     {
-        return $this->allRoles()->pluck('slug')->intersect($roles)->count() === count($roles);
+        return $this->allRoles()->intersect($roles)->count() === count($roles);
     }
 }
