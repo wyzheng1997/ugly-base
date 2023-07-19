@@ -18,11 +18,16 @@ use Ugly\Base\Services\FormService;
 class RoleController extends QuickFormController
 {
     /**
+     * 认证守卫.
+     */
+    protected string $guard = '';
+
+    /**
      * 角色列表.
      */
-    public function index($guard): JsonResponse
+    public function index(): JsonResponse
     {
-        $loginUser = AuthInfoServices::loginUser($guard);
+        $loginUser = AuthInfoServices::loginUser($this->guard);
 
         return $this->success(
             Role::query()
@@ -36,8 +41,10 @@ class RoleController extends QuickFormController
     /**
      * 新增/更新表单配置.
      */
-    protected function form($guard): FormService
+    protected function form(): FormService
     {
+        $guard = $this->guard;
+
         return FormService::make(Role::class, function (FormService $form) use ($guard) {
             $loginUser = AuthInfoServices::loginUser($guard);
             $belongs_type = $loginUser->getRolePermissionType();

@@ -16,11 +16,16 @@ class PermissionController extends Controller
     use ApiResource;
 
     /**
+     * 认证守卫.
+     */
+    protected string $guard = '';
+
+    /**
      * 权限列表.
      */
-    public function index($guard): JsonResponse
+    public function index(): JsonResponse
     {
-        $loginUser = AuthInfoServices::loginUser($guard);
+        $loginUser = AuthInfoServices::loginUser($this->guard);
         $permissions = Permissions::query()
             ->where('belongs_type', $loginUser->getRolePermissionType())
             ->orderBy('id')
