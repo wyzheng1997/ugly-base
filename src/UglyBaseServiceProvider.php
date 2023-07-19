@@ -6,9 +6,13 @@ use Illuminate\Support\ServiceProvider;
 
 class UglyBaseServiceProvider extends ServiceProvider
 {
-    /**
-     * Register services.
-     */
+    public function register(): void
+    {
+        $this->commands([
+            Console\MakePermission::class,
+        ]);
+    }
+
     public function boot(): void
     {
         $this->registerPublishing();
