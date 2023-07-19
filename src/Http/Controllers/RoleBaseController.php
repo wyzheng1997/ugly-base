@@ -89,6 +89,16 @@ class RoleBaseController extends QuickFormController
                 );
             });
 
+            // 删除前判断
+            $form->deleting(function (FormService $form) use ($belongs_id) {
+                if ($form->getModel()->belongs_id != $belongs_id) {
+                    throw new ApiCustomError('无权删除此角色');
+                }
+                if ($form->getModel()->slug === 'super') {
+                    throw new ApiCustomError('超级管理员角色不允许删除');
+                }
+            });
+
             // 删除后清空关联关系.
             $form->deleted(function (FormService $form) {
                 $id = $form->getKey();
@@ -101,8 +111,6 @@ class RoleBaseController extends QuickFormController
 
     /**
      * 角色详情.
-     * @param $id
-     * @return JsonResponse
      */
     public function show($id): JsonResponse
     {
