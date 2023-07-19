@@ -15,7 +15,7 @@ use Ugly\Base\Services\FormService;
 /**
  * 角色管理.
  */
-class RoleController extends QuickFormController
+class RoleBaseController extends QuickFormController
 {
     /**
      * 认证守卫.

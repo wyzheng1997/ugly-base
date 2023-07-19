@@ -11,7 +11,7 @@ use Ugly\Base\Traits\ApiResource;
 /**
  * 权限列表.
  */
-class PermissionController extends Controller
+class PermissionBaseController extends Controller
 {
     use ApiResource;
 
