@@ -14,7 +14,7 @@ use Ugly\Base\Services\AuthInfoServices;
 use Ugly\Base\Services\FormService;
 
 /**
- * 角色管理.
+ * 角色基类.
  */
 class RoleBaseController extends QuickFormController
 {

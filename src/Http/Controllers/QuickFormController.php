@@ -10,6 +10,9 @@ use Ugly\Base\Exceptions\ApiCustomError;
 use Ugly\Base\Services\FormService;
 use Ugly\Base\Traits\ApiResource;
 
+/**
+ * 快速表单.
+ */
 class QuickFormController extends Controller
 {
     use ApiResource;

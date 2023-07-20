@@ -9,7 +9,7 @@ use Ugly\Base\Services\AuthInfoServices;
 use Ugly\Base\Traits\ApiResource;
 
 /**
- * 权限列表.
+ * 权限基类.
  */
 class PermissionBaseController extends Controller
 {
