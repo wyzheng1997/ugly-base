@@ -31,7 +31,7 @@ class PermissionBaseController extends QuickFormController
 
         return $this->success(
             arr2tree($permissions, function ($item) {
-                return $item->only(['id', 'name', 'slug', 'http_method', 'http_path']);
+                return $item->only(['id', 'name', 'slug', 'http_method', 'http_path', 'pid']);
             })
         );
     }
