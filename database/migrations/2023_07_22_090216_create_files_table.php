@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('type')->comment('文件类型');
             $table->string('size')->comment('文件大小');
             $table->string('sha1')->index()->comment('文件sha1');
-            $table->string('belong_type')->comment('上传者类型');
-            $table->unsignedBigInteger('belong_id')->comment('上传者id');
+            $table->string('belongs_type')->comment('上传者类型');
+            $table->unsignedBigInteger('belongs_id')->comment('上传者id');
             $table->timestamps();
         });
     }
