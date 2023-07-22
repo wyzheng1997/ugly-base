@@ -3,21 +3,18 @@
 namespace Ugly\Base\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Ugly\Base\Exceptions\ApiCustomError;
 use Ugly\Base\Models\Permissions;
 use Ugly\Base\Services\AuthInfoServices;
 use Ugly\Base\Services\FormService;
-use Ugly\Base\Traits\ApiResource;
 
 /**
  * 权限基类.
  */
-class PermissionBaseController extends Controller
+class PermissionBaseController extends QuickFormController
 {
-    use ApiResource;
-
     /**
      * 认证守卫.
      */
@@ -48,8 +45,9 @@ class PermissionBaseController extends Controller
     {
         $loginUser = AuthInfoServices::loginUser($this->guard);
         $belongs_type = $loginUser->getRolePermissionType();
+        $model = Permissions::query()->where('belongs_type', $belongs_type);
 
-        return FormService::make(Permissions::query(), function (FormService $form) use ($belongs_type) {
+        return FormService::make($model, function (FormService $form) use ($belongs_type) {
             $rules = ['name' => 'required'];
             // slug 唯一验证.
             $slugUnique = Rule::unique('permissions')
@@ -60,6 +58,8 @@ class PermissionBaseController extends Controller
             $rules['slug'] = ['required', $slugUnique];
             $form->validate($rules);
             $form->extraFields(['pid' => 0, 'http_method', 'http_path']);
+
+            // 保存时，验证上级权限是否合法.
             $form->saving(function (FormService $form, $formData) use ($belongs_type) {
                 if ($formData['pid'] > 0) {
                     $parent = Permissions::query()->find($formData['pid']);
@@ -73,6 +73,13 @@ class PermissionBaseController extends Controller
                 $formData['belongs_type'] = $belongs_type;
 
                 return $formData;
+            });
+
+            // 删除权限时，删除角色权限关联.
+            $form->deleted(function (FormService $form) {
+                DB::table('role_has_permissions')
+                    ->where('permission_id', $form->getKey())
+                    ->delete();
             });
         });
     }

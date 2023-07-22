@@ -46,10 +46,12 @@ class RoleBaseController extends QuickFormController
     {
         $loginUser = AuthInfoServices::loginUser($this->guard);
         $belongs_type = $loginUser->getRolePermissionType();
-        $model = Role::query()->where('belongs_type', $belongs_type);
+        $belongs_id = $loginUser->getRoleBelongId();
+        $model = Role::query()
+            ->where('belongs_type', $belongs_type)
+            ->where('belongs_id', $belongs_id);
 
-        return FormService::make($model, function (FormService $form) use ($loginUser, $belongs_type) {
-            $belongs_id = $loginUser->getRoleBelongId();
+        return FormService::make($model, function (FormService $form) use ($belongs_type, $belongs_id) {
             $rules = [
                 'name' => 'required',
                 'permissions' => 'array',
@@ -66,10 +68,6 @@ class RoleBaseController extends QuickFormController
 
             // 保存前回调.
             $form->saving(function (FormService $form, $formData) use ($belongs_type, $belongs_id) {
-                if ($form->isEdit() && $form->getModel()->belongs_id != $belongs_id) {
-                    throw new ApiCustomError('无权修改此角色');
-                }
-
                 $formData['belongs_type'] = $belongs_type;
                 $formData['belongs_id'] = $belongs_id;
 
@@ -90,10 +88,7 @@ class RoleBaseController extends QuickFormController
             });
 
             // 删除前判断
-            $form->deleting(function (FormService $form) use ($belongs_id) {
-                if ($form->getModel()->belongs_id != $belongs_id) {
-                    throw new ApiCustomError('无权删除此角色');
-                }
+            $form->deleting(function (FormService $form) {
                 if ($form->getModel()->slug === 'super') {
                     throw new ApiCustomError('超级管理员角色不允许删除');
                 }
