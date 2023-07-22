@@ -5,12 +5,12 @@ namespace Ugly\Base\Contracts;
 /**
  * 角色权限管理器.
  */
-interface RolePermissionManage
+interface RoleManage
 {
     /**
      * 获取角色权限类型.
      */
-    public function getRolePermissionType(): string;
+    public function getRoleBelongType(): string;
 
     /**
      * 获取角色权限所属ID.

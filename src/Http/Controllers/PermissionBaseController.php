@@ -16,18 +16,17 @@ use Ugly\Base\Services\FormService;
 class PermissionBaseController extends QuickFormController
 {
     /**
-     * 认证守卫.
+     * 权限类型.
      */
-    protected string $guard = '';
+    protected string $type = '';
 
     /**
      * 权限列表.
      */
     public function index(): JsonResponse
     {
-        $loginUser = AuthInfoServices::loginUser($this->guard);
         $permissions = Permissions::query()
-            ->where('belongs_type', $loginUser->getRolePermissionType())
+            ->where('belongs_type', $this->type)
             ->orderBy('id')
             ->get();
 
@@ -43,15 +42,13 @@ class PermissionBaseController extends QuickFormController
      */
     protected function form(): FormService
     {
-        $loginUser = AuthInfoServices::loginUser($this->guard);
-        $belongs_type = $loginUser->getRolePermissionType();
-        $model = Permissions::query()->where('belongs_type', $belongs_type);
+        $model = Permissions::query()->where('belongs_type', $this->type);
 
-        return FormService::make($model, function (FormService $form) use ($belongs_type) {
+        return FormService::make($model, function (FormService $form) {
             $rules = ['name' => 'required'];
             // slug 唯一验证.
             $slugUnique = Rule::unique('permissions')
-                ->where('belongs_type', $belongs_type);
+                ->where('belongs_type', $this->type);
             if ($form->isEdit()) {
                 $slugUnique = $slugUnique->ignore($form->getModel());
             }
@@ -60,17 +57,17 @@ class PermissionBaseController extends QuickFormController
             $form->extraFields(['pid' => 0, 'http_method', 'http_path']);
 
             // 保存时，验证上级权限是否合法.
-            $form->saving(function (FormService $form, $formData) use ($belongs_type) {
+            $form->saving(function (FormService $form, $formData) {
                 if ($formData['pid'] > 0) {
                     $parent = Permissions::query()->find($formData['pid']);
-                    if ($parent?->belongs_type != $belongs_type) {
+                    if ($parent?->belongs_type != $this->type) {
                         throw new ApiCustomError('非法操作！');
                     }
                     if ($form->isEdit() && $parent->id === (int) $form->getKey()) {
                         throw new ApiCustomError('上级权限不能是自己！');
                     }
                 }
-                $formData['belongs_type'] = $belongs_type;
+                $formData['belongs_type'] = $this->type;
 
                 return $formData;
             });
