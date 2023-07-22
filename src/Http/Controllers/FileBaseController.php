@@ -57,7 +57,8 @@ class FileBaseController extends Controller
             'name' => 'like',
         ])->where('belongs_type', $belongs_type)
             ->where('belongs_id', $belongs_id)
-            ->orderByDesc('id');
+            ->select(['id', 'name', 'path', 'type', 'size', 'created_at', 'updated_at'])
+            ->orderByDesc('updated_at');
 
         return $this->paginate($query);
     }
@@ -71,19 +72,33 @@ class FileBaseController extends Controller
         if ($request->hasFile($this->fileKey)) {
             $file = $request->file($this->fileKey);
             $sha1 = sha1_file($file->getRealPath());
-            $path = $this->customPath();
-            $name = $this->customName($file);
-            $path = $file->storeAs($path, $name, $this->disk);
+            $belongs_type = $loginUser?->getFileBelongType();
+            $belongs_id = $loginUser?->getFileBelongId();
+            // 通过sha1判断文件是否已存在.
+            $oldFile = File::query()->where('sha1', $sha1)->first();
+            if ($oldFile) {
+                $path = $oldFile->path;
+            } else {
+                $name = $this->customName($file);
+                $path = $file->storeAs($this->customPath(), $name, $this->disk);
+            }
 
-            File::query()->create([
-                'name' => $file->getClientOriginalName(),
-                'path' => $path,
-                'type' => $file->getMimeType(),
-                'size' => $file->getSize(),
-                'sha1' => $sha1,
-                'belongs_type' => $loginUser?->getFileBelongType(),
-                'belongs_id' => $loginUser?->getFileBelongId(),
-            ]);
+            // 完全相同的文件不重复上传.
+            if ($oldFile && $oldFile->belongs_type === $belongs_type && $oldFile->belongs_id == $belongs_id) {
+                $oldFile->update([ // 更新文件名称.
+                    'name' => $file->getClientOriginalName(),
+                ]);
+            } else {
+                File::query()->create([
+                    'name' => $file->getClientOriginalName(),
+                    'path' => $path,
+                    'type' => $file->getMimeType(),
+                    'size' => $file->getSize(),
+                    'sha1' => $sha1,
+                    'belongs_type' => $loginUser?->getFileBelongType(),
+                    'belongs_id' => $loginUser?->getFileBelongId(),
+                ]);
+            }
 
             return $this->success([
                 'path' => $path,
