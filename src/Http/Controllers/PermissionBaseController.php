@@ -66,7 +66,7 @@ class PermissionBaseController extends QuickFormController
                     if ($parent?->belongs_type != $belongs_type) {
                         throw new ApiCustomError('非法操作！');
                     }
-                    if ($form->isEdit() && $parent->id === $form->getKey()) {
+                    if ($form->isEdit() && $parent->id === (int) $form->getKey()) {
                         throw new ApiCustomError('上级权限不能是自己！');
                     }
                 }
