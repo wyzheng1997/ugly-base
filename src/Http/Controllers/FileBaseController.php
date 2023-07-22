@@ -42,7 +42,7 @@ class FileBaseController extends Controller
      */
     protected function customName($file): string
     {
-        return md5($file->getClientOriginalName()).'.'.$file->getClientOriginalExtension();
+        return md5(time().$file->getClientOriginalName()).'.'.$file->getClientOriginalExtension();
     }
 
     /**
