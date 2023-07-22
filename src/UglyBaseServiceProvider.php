@@ -25,10 +25,6 @@ class UglyBaseServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../database/migrations' => database_path('migrations'),
             ], 'ugly-base-migrations');
-
-            $this->publishes([
-                __DIR__.'/../database/permissions.php' => database_path('permissions.php'),
-            ], 'ugly-base-permissions');
         }
     }
 }
