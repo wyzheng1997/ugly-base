@@ -44,11 +44,11 @@ class RoleBaseController extends QuickFormController
      */
     protected function form(): FormService
     {
-        $guard = $this->guard;
+        $loginUser = AuthInfoServices::loginUser($this->guard);
+        $belongs_type = $loginUser->getRolePermissionType();
+        $model = Role::query()->where('belongs_type', $belongs_type);
 
-        return FormService::make(Role::class, function (FormService $form) use ($guard) {
-            $loginUser = AuthInfoServices::loginUser($guard);
-            $belongs_type = $loginUser->getRolePermissionType();
+        return FormService::make($model, function (FormService $form) use ($loginUser, $belongs_type) {
             $belongs_id = $loginUser->getRoleBelongId();
             $rules = [
                 'name' => 'required',

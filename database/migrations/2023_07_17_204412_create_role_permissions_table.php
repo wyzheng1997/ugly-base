@@ -29,6 +29,8 @@ return new class extends Migration
             $table->string('slug')->comment('权限标识');
             $table->unsignedBigInteger('pid')->comment('父级ID');
             $table->string('belongs_type')->comment('所属类型');
+            $table->string('http_method')->nullable()->comment('请求方式');
+            $table->text('http_path')->nullable()->comment('请求路径');
             $table->timestamps();
             $table->unique(['slug', 'belongs_type'], 'slug_type_unique');
         });

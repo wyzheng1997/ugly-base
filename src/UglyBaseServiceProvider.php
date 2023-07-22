@@ -8,9 +8,7 @@ class UglyBaseServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->commands([
-            Console\MakePermission::class,
-        ]);
+
     }
 
     public function boot(): void
