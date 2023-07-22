@@ -24,6 +24,11 @@ class RoleBaseController extends QuickFormController
     protected string $guard = '';
 
     /**
+     * 指定权限所属类型.
+     */
+    protected string $permissionType = '';
+
+    /**
      * 角色列表.
      */
     public function index(): JsonResponse
@@ -32,7 +37,7 @@ class RoleBaseController extends QuickFormController
 
         return $this->success(
             Role::query()
-                ->where('belongs_type', $loginUser->getRolePermissionType())
+                ->where('belongs_type', $loginUser->getRoleBelongType())
                 ->where('belongs_id', $loginUser->getRoleBelongId())
                 ->orderByDesc('id')
                 ->get(['id', 'name', 'slug'])
@@ -45,7 +50,7 @@ class RoleBaseController extends QuickFormController
     protected function form(): FormService
     {
         $loginUser = AuthInfoServices::loginUser($this->guard);
-        $belongs_type = $loginUser->getRolePermissionType();
+        $belongs_type = $loginUser->getRoleBelongType();
         $belongs_id = $loginUser->getRoleBelongId();
         $model = Role::query()
             ->where('belongs_type', $belongs_type)
@@ -77,11 +82,11 @@ class RoleBaseController extends QuickFormController
             });
 
             // 保存后处理权限关联关系.
-            $form->saved(function (FormService $form, Request $request) use ($belongs_type) {
+            $form->saved(function (FormService $form, Request $request) {
                 $permission_ids = $request->input('permissions', []);
                 $form->getModel()->permissions()->sync(
                     Permissions::query()
-                        ->where('belongs_type', $belongs_type)
+                        ->where('belongs_type', $this->permissionType)
                         ->whereIn('id', $permission_ids)
                         ->pluck('id')
                 );
@@ -111,7 +116,7 @@ class RoleBaseController extends QuickFormController
     {
         $loginUser = AuthInfoServices::loginUser($this->guard);
         $role = Role::with('permissions')
-            ->where('belongs_type', $loginUser->getRolePermissionType())
+            ->where('belongs_type', $loginUser->getRoleBelongType())
             ->where('belongs_id', $loginUser->getRoleBelongId())
             ->findOrFail($id);
 

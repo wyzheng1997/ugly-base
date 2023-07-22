@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Ugly\Base\Exceptions\ApiCustomError;
 use Ugly\Base\Models\Permissions;
-use Ugly\Base\Services\AuthInfoServices;
 use Ugly\Base\Services\FormService;
 
 /**
