@@ -82,11 +82,15 @@ class FileBaseController extends Controller
                 $name = $this->customName($file);
                 $path = $file->storeAs($this->customPath(), $name, $this->disk);
             }
+            if (! $path) {
+                return $this->failed('上传失败');
+            }
 
             // 完全相同的文件不重复上传.
             if ($oldFile && $oldFile->belongs_type === $belongs_type && $oldFile->belongs_id == $belongs_id) {
                 $oldFile->update([ // 更新文件名称.
                     'name' => $file->getClientOriginalName(),
+                    'updated_at' => now(), // 更新时间 排序在前面.
                 ]);
             } else {
                 File::query()->create([
