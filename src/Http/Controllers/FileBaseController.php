@@ -10,6 +10,9 @@ use Ugly\Base\Models\File;
 use Ugly\Base\Services\AuthInfoServices;
 use Ugly\Base\Traits\ApiResource;
 
+/**
+ * 文件上传基类.
+ */
 class FileBaseController extends Controller
 {
     use ApiResource;
@@ -46,6 +49,23 @@ class FileBaseController extends Controller
     }
 
     /**
+     * 自定义转换文件类型. 返回空字符串则表示不存储在素材库中.
+     */
+    protected function getCustomType(string $mimeType): string
+    {
+        // 以image开头的都是图片.
+        if (str_starts_with($mimeType, 'image')) {
+            return 'image';
+        }
+        // 以video开头的都是视频.
+        if (str_starts_with($mimeType, 'video')) {
+            return 'video';
+        }
+
+        return '';
+    }
+
+    /**
      * 文件列表.
      */
     public function index(): JsonResponse
@@ -55,6 +75,7 @@ class FileBaseController extends Controller
         $belongs_id = $loginUser->getFileBelongId();
         $query = File::search([
             'name' => 'like',
+            'type' => '=',
         ])->where('belongs_type', $belongs_type)
             ->where('belongs_id', $belongs_id)
             ->select(['id', 'name', 'path', 'type', 'size', 'created_at', 'updated_at'])
@@ -68,37 +89,39 @@ class FileBaseController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $is_material = $request->boolean('is_material'); // 是否保存到素材库
-        $loginUser = AuthInfoServices::tryLoginUser($this->guard);
         if ($request->hasFile($this->fileKey)) {
             $file = $request->file($this->fileKey);
             $sha1 = sha1_file($file->getRealPath());
-            $belongs_type = $loginUser?->getFileBelongType();
-            $belongs_id = $loginUser?->getFileBelongId();
             // 通过sha1判断文件是否已存在.
             $oldFile = File::query()->where('sha1', $sha1)->first();
+            $name = $this->customName($file);
             if ($oldFile) {
                 $path = $oldFile->path;
             } else {
-                $name = $this->customName($file);
                 $path = $file->storeAs($this->customPath(), $name, $this->disk);
             }
             if (! $path) {
                 return $this->failed('上传失败');
             }
 
-            if ($is_material) { // 保存到素材库
+            $mimeType = $file->getMimeType();
+            $type = $this->getCustomType($mimeType);
+            if ($type) { // 保存到素材库
+                $loginUser = AuthInfoServices::tryLoginUser($this->guard);
+                $belongs_type = $loginUser?->getFileBelongType();
+                $belongs_id = $loginUser?->getFileBelongId();
                 // 完全相同的文件不重复上传.
                 if ($oldFile && $oldFile->belongs_type === $belongs_type && $oldFile->belongs_id == $belongs_id) {
                     $oldFile->update([ // 更新文件名称.
-                        'name' => $file->getClientOriginalName(),
+                        'name' => $name,
                         'updated_at' => now(), // 更新时间 排序在前面.
                     ]);
                 } else {
                     File::query()->create([
-                        'name' => $file->getClientOriginalName(),
+                        'name' => $name,
                         'path' => $path,
-                        'type' => $file->getMimeType(),
+                        'type' => $type,
+                        'mime_type' => $mimeType,
                         'size' => $file->getSize(),
                         'sha1' => $sha1,
                         'belongs_type' => $belongs_type,

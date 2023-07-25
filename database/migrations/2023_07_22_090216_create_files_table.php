@@ -16,7 +16,8 @@ return new class extends Migration
             $table->id();
             $table->string('name')->comment('文件名');
             $table->string('path')->comment('文件路径');
-            $table->string('type')->comment('文件类型');
+            $table->string('type')->comment('自定义文件类型用于筛选');
+            $table->string('mime_type')->comment('文件类型');
             $table->string('size')->comment('文件大小');
             $table->string('sha1')->index()->comment('文件sha1');
             $table->string('belongs_type')->comment('上传者类型');
