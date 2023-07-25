@@ -68,6 +68,7 @@ class FileBaseController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $is_material = $request->boolean('is_material'); // 是否保存到素材库
         $loginUser = AuthInfoServices::tryLoginUser($this->guard);
         if ($request->hasFile($this->fileKey)) {
             $file = $request->file($this->fileKey);
@@ -86,22 +87,24 @@ class FileBaseController extends Controller
                 return $this->failed('上传失败');
             }
 
-            // 完全相同的文件不重复上传.
-            if ($oldFile && $oldFile->belongs_type === $belongs_type && $oldFile->belongs_id == $belongs_id) {
-                $oldFile->update([ // 更新文件名称.
-                    'name' => $file->getClientOriginalName(),
-                    'updated_at' => now(), // 更新时间 排序在前面.
-                ]);
-            } else {
-                File::query()->create([
-                    'name' => $file->getClientOriginalName(),
-                    'path' => $path,
-                    'type' => $file->getMimeType(),
-                    'size' => $file->getSize(),
-                    'sha1' => $sha1,
-                    'belongs_type' => $loginUser?->getFileBelongType(),
-                    'belongs_id' => $loginUser?->getFileBelongId(),
-                ]);
+            if ($is_material) { // 保存到素材库
+                // 完全相同的文件不重复上传.
+                if ($oldFile && $oldFile->belongs_type === $belongs_type && $oldFile->belongs_id == $belongs_id) {
+                    $oldFile->update([ // 更新文件名称.
+                        'name' => $file->getClientOriginalName(),
+                        'updated_at' => now(), // 更新时间 排序在前面.
+                    ]);
+                } else {
+                    File::query()->create([
+                        'name' => $file->getClientOriginalName(),
+                        'path' => $path,
+                        'type' => $file->getMimeType(),
+                        'size' => $file->getSize(),
+                        'sha1' => $sha1,
+                        'belongs_type' => $belongs_type,
+                        'belongs_id' => $belongs_id,
+                    ]);
+                }
             }
 
             return $this->success([
