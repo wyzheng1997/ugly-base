@@ -204,7 +204,7 @@ class FormService
                 throw new \Exception($field.'不允许编辑.');
             }
             if (isset($this->validateRules[$field])) { // 单独验证字段.
-                $request->validate([$field => $this->validateRules[$field]]);
+                $request->validate(['value' => $this->validateRules[$field]]);
             }
             $this->model->update([$field => $request->input('value')]);
 
