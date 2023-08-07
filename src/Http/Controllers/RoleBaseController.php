@@ -71,12 +71,12 @@ class RoleBaseController extends QuickFormController
             $rules['slug'] = ['required', $slugUnique];
             $form->validate($rules);
 
+            $form->ignoreFields(['permissions']);
+
             // 保存前回调.
             $form->saving(function (FormService $form, $formData) use ($belongs_type, $belongs_id) {
                 $formData['belongs_type'] = $belongs_type;
                 $formData['belongs_id'] = $belongs_id;
-
-                unset($formData['permissions']);
 
                 return $formData;
             });

@@ -50,6 +50,11 @@ class FormService
     private array $extraFields = [];
 
     /**
+     * 忽略的字段.
+     */
+    private array $ignoreFields = [];
+
+    /**
      * 需要处理的模型.
      */
     private $model;
@@ -175,6 +180,16 @@ class FormService
     }
 
     /**
+     * 设置忽略字段.
+     */
+    public function ignoreFields(array $fields): static
+    {
+        $this->ignoreFields = array_merge($this->ignoreFields, $fields);
+
+        return $this;
+    }
+
+    /**
      * 设置允许行内编辑的字段.
      */
     public function inlineEdit(array $fields): static
@@ -236,6 +251,14 @@ class FormService
                 throw new \Exception('saving钩子必须返回数组');
             }
         }
+
+        // 忽略字段.
+        if (! empty($this->ignoreFields)) {
+            foreach ($this->ignoreFields as $field) {
+                unset($formData[$field]);
+            }
+        }
+
         if ($this->isEdit()) { // 更新
             foreach ($formData as $key => $val) {
                 $this->model->$key = $val;
