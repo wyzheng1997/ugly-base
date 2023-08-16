@@ -47,19 +47,24 @@ trait HasRoles
     }
 
     /**
-     * 获取所有权限slug.
+     * 获取所有权限.
      */
-    public function allPermissions(): Collection
+    public function allPermissions($field = 'slug'): Collection
     {
         $cacheKey = static::class.'_permissions_cache_'.$this->id;
         if ($this->permissionCacheTTL > 0) {
-            return Cache::remember($cacheKey, $this->permissionCacheTTL, function () {
-                return $this->roles->pluck('permissions')->flatten()->pluck('slug')->unique();
+            $permission = Cache::remember($cacheKey, $this->permissionCacheTTL, function () {
+                return $this->roles->pluck('permissions')->flatten();
             });
         } else {
             Cache::forget($cacheKey);
+            $permission = $this->roles->pluck('permissions')->flatten();
 
-            return $this->roles->pluck('permissions')->flatten()->pluck('slug')->unique();
+        }
+        if ($field === '*') {
+            return $permission;
+        } else {
+            return $permission->pluck($field)->unique();
         }
     }
 
@@ -109,5 +114,45 @@ trait HasRoles
     public function hasAllRole(array $roles): bool
     {
         return $this->allRoles()->intersect($roles)->count() === count($roles);
+    }
+
+    /**
+     * 获取权限白名单. 格式为 ["GET:/api/v1/users/*", "POST:/api/v1/users"]
+     */
+    public function getPermissionWhiteList(): array
+    {
+        return [];
+    }
+
+    public function getPermissionRouteRules(): array
+    {
+        $cacheKey = static::class.'_permission_route_rules_'.$this->id;
+        if ($this->permissionCacheTTL > 0) {
+            return Cache::remember($cacheKey, $this->permissionCacheTTL, fn () => $this->formatPermissionRouteRules());
+        } else {
+            Cache::forget($cacheKey);
+
+            return $this->formatPermissionRouteRules();
+        }
+    }
+
+    /**
+     * 格式化权限路由规则.
+     */
+    protected function formatPermissionRouteRules(): array
+    {
+        $allRules = [];
+        foreach ($this->allPermissions('*')->filter(fn ($item) => $item->path && $item->method) as $item) {
+            $paths = explode("\n", $item->path);
+            foreach ($paths as $path) {
+                $path = trim($path);
+                if (empty($path)) {
+                    continue;
+                }
+                $allRules[] = $item->method.':'.trim($path);
+            }
+        }
+
+        return array_unique($allRules);
     }
 }
