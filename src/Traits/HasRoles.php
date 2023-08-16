@@ -54,12 +54,11 @@ trait HasRoles
         $cacheKey = static::class.'_permissions_cache_'.$this->id;
         if ($this->permissionCacheTTL > 0) {
             $permission = Cache::remember($cacheKey, $this->permissionCacheTTL, function () {
-                return $this->roles->pluck('permissions')->flatten();
+                return $this->roles()->with('permissions')->get()->pluck('permissions')->flatten();
             });
         } else {
             Cache::forget($cacheKey);
-            $permission = $this->roles->pluck('permissions')->flatten();
-
+            $permission = $this->roles()->with('permissions')->get()->pluck('permissions')->flatten();
         }
         if ($field === '*') {
             return $permission;
@@ -142,14 +141,14 @@ trait HasRoles
     protected function formatPermissionRouteRules(): array
     {
         $allRules = [];
-        foreach ($this->allPermissions('*')->filter(fn ($item) => $item->path && $item->method) as $item) {
-            $paths = explode("\n", $item->path);
+        foreach ($this->allPermissions('*')->filter(fn ($item) => $item->http_path && $item->http_method) as $item) {
+            $paths = explode("\n", $item->http_path);
             foreach ($paths as $path) {
                 $path = trim($path);
                 if (empty($path)) {
                     continue;
                 }
-                $allRules[] = $item->method.':'.trim($path);
+                $allRules[] = $item->http_method.':'.trim($path);
             }
         }
 
