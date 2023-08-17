@@ -22,6 +22,10 @@ class PermissionGuard
 
         $method = strtoupper($request->method());
         $path = $request->path();
+        // 确保path以/开头
+        if (! str_starts_with($path, '/')) {
+            $path = '/'.$path;
+        }
 
         // 检查权限(白名单)
         if (
