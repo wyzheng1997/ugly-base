@@ -59,8 +59,11 @@ class PermissionGuard
             if ($rule_method !== 'ANY' && $rule_method !== $method) {
                 continue;
             }
+            if ($rule_path === '*') {
+                return true;
+            }
             // 正则检查路径是否匹配
-            if (preg_match('/^'.str_replace('/', '\/', $rule_path).'$/', $path)) {
+            if (preg_match('/^'.str_replace('/', '\/', $rule_path).'/', $path)) {
                 return true;
             }
         }
