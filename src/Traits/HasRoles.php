@@ -141,14 +141,14 @@ trait HasRoles
     protected function formatPermissionRouteRules(): array
     {
         $allRules = [];
-        foreach ($this->allPermissions('*')->filter(fn ($item) => $item->http_path && $item->http_method) as $item) {
+        foreach ($this->allPermissions('*')->filter(fn ($item) => $item->http_path) as $item) {
             $paths = explode("\n", $item->http_path);
             foreach ($paths as $path) {
                 $path = trim($path);
                 if (empty($path)) {
                     continue;
                 }
-                $allRules[] = $item->http_method.':'.trim($path);
+                $allRules[] = ($item->http_method ?: 'ANY').':'.trim($path);
             }
         }
 
