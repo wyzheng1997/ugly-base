@@ -19,6 +19,9 @@ class PermissionGuard
     {
         // 获取登录用户
         $user = $request->user($guard);
+        if (empty($user)) {
+            goto FORBIDDEN; // 直接跳403
+        }
 
         $method = strtoupper($request->method());
         $path = $request->path();
@@ -43,6 +46,7 @@ class PermissionGuard
             return $next($request);
         }
 
+        FORBIDDEN:
         return $this->failed('暂无权限', ApiResponseCode::Forbidden, Response::HTTP_FORBIDDEN);
     }
 
