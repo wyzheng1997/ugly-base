@@ -118,7 +118,7 @@ trait HasRoles
     /**
      * 获取权限白名单. 格式为 ["GET:/api/v1/users/*", "POST:/api/v1/users"]
      */
-    public function getPermissionWhiteList(): array
+    public static function getPermissionWhiteList(): array
     {
         return [];
     }

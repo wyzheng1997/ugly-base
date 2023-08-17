@@ -17,12 +17,6 @@ class PermissionGuard
 
     public function handle(Request $request, Closure $next, $guard): Response
     {
-        // 获取登录用户
-        $user = $request->user($guard);
-        if (empty($user)) {
-            goto FORBIDDEN; // 直接跳403
-        }
-
         $method = strtoupper($request->method());
         $path = $request->path();
         // 确保path以/开头
@@ -30,12 +24,20 @@ class PermissionGuard
             $path = '/'.$path;
         }
 
+        // 获取guard对应的model
+        $provider = config('auth.guards.'.$guard.'.provider');
+        $model = config('auth.providers.'.$provider.'.model');
         // 检查权限(白名单)
         if (
-            method_exists($user, 'getPermissionWhiteList') &&
-            $this->checkPermission($method, $path, $user->getPermissionWhiteList())
+            method_exists($model, 'getPermissionWhiteList') &&
+            $this->checkPermission($method, $path, $model::getPermissionWhiteList())
         ) {
             return $next($request);
+        }
+
+        $user = $request->user($guard);
+        if (empty($user)) {
+            goto FORBIDDEN; // 直接跳403
         }
 
         // 检查权限(数据库权限)
