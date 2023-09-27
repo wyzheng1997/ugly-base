@@ -5,7 +5,7 @@ namespace Ugly\Base\Traits;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Ugly\Base\Enums\ApiResponseCode;
+use Ugly\Base\Enums\ResponseCode;
 
 /**
  * 统一http响应.
@@ -52,10 +52,10 @@ trait ApiResource
      * 失败响应.
      *
      * @param  string  $msg 失败信息
-     * @param  ApiResponseCode  $code 失败码
+     * @param  ResponseCode  $code 失败码
      * @param  int  $httpCode http状态码
      */
-    final public function failed(string $msg = 'failed', ApiResponseCode $code = ApiResponseCode::Toast,
+    final public function failed(string $msg = 'failed', ResponseCode $code = ResponseCode::Failed,
         int $httpCode = Response::HTTP_BAD_REQUEST): JsonResponse
     {
         return response()->json([
