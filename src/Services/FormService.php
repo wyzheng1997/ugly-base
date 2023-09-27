@@ -27,7 +27,7 @@ class FormService
     /**
      * 表单事件.
      */
-    private array $formEvent = [];
+    private array $formCallback = [];
 
     /**
      * 表单验证规则.
@@ -60,9 +60,9 @@ class FormService
     private $model;
 
     /**
-     * 操作model的ID.
+     * 操作model的主键值.
      */
-    private mixed $_id = null;
+    private mixed $key = null;
 
     /**
      * 允许行内编辑的字段.
@@ -70,27 +70,21 @@ class FormService
     private array $allowInlineEditFields = [];
 
     /**
-     * 构建器回调.
-     */
-    private ?\Closure $builderCallback;
-
-    /**
      * 构造函数.
      */
-    private function __construct($model, \Closure $builderCallback = null)
+    private function __construct($model)
     {
         $this->model = is_string($model) ? app($model) : $model;
-        $this->builderCallback = $builderCallback;
     }
 
     /**
      * 创建实例.
      *
-     * @param  mixed  ...$params
+     * @return FormService
      */
-    public static function make(...$params): static
+    public static function make($model): static
     {
-        return new static(...$params);
+        return new static($model);
     }
 
     /**
@@ -102,13 +96,13 @@ class FormService
     }
 
     /**
-     * 设置ID（编辑/删除）.
+     * 设置主键（编辑/删除）.
      *
      * @return $this
      */
-    public function setKey(int|string $id): static
+    public function setKey(int|string $key): static
     {
-        $this->_id = $id;
+        $this->key = $key;
 
         return $this;
     }
@@ -118,7 +112,7 @@ class FormService
      */
     public function getKey(): mixed
     {
-        return $this->_id;
+        return $this->key;
     }
 
     /**
@@ -156,13 +150,21 @@ class FormService
     }
 
     /**
+     * 设置模型策略.
+     */
+    public function policy(\Closure $closure)
+    {
+        $this->formCallback['policy'] = $closure;
+
+        return $this;
+    }
+
+    /**
      * 设置验证规则.
      */
-    public function validate(array $rules, array $messages = [], array $attributes = []): static
+    public function validate(\Closure $closure): static
     {
-        $this->validateRules = array_merge($this->validateRules, $rules);
-        $this->validateMessages = array_merge($this->validateMessages, $messages);
-        $this->validateAttribute = array_merge($this->validateAttribute, $attributes);
+        $this->formCallback['validate'] = $closure;
 
         return $this;
     }
@@ -205,9 +207,8 @@ class FormService
     public function save()
     {
         if ($this->isEdit()) {
-            $this->model = $this->model->findOrFail($this->_id);
+            $this->model = $this->model->findOrFail($this->key);
         }
-        $this->builderCallback && call_user_func($this->builderCallback, $this);
 
         // 当前请求.
         $request = request();
@@ -229,6 +230,9 @@ class FormService
 
         // 表单数据.
         $formData = [];
+        //        $this->validateRules = array_merge($this->validateRules, $rules);
+        //        $this->validateMessages = array_merge($this->validateMessages, $messages);
+        //        $this->validateAttribute = array_merge($this->validateAttribute, $attributes);
 
         // 字段验证
         if (! empty($this->validateRules)) {
@@ -245,8 +249,8 @@ class FormService
         }
 
         // 保存前钩子，调整formData.
-        if (isset($this->formEvent['saving']) && $this->formEvent['saving'] instanceof \Closure) {
-            $formData = call_user_func($this->formEvent['saving'], $this, $formData, $request);
+        if (isset($this->formCallback['saving']) && $this->formCallback['saving'] instanceof \Closure) {
+            $formData = call_user_func($this->formCallback['saving'], $this, $formData, $request);
             if (! is_array($formData)) {
                 throw new \Exception('saving钩子必须返回数组');
             }
@@ -270,8 +274,8 @@ class FormService
         }
 
         // 保存后钩子.
-        if (isset($this->formEvent['saved']) && $this->formEvent['saved'] instanceof \Closure) {
-            call_user_func($this->formEvent['saved'], $this, $request);
+        if (isset($this->formCallback['saved']) && $this->formCallback['saved'] instanceof \Closure) {
+            call_user_func($this->formCallback['saved'], $this, $request);
         }
 
         return $this->model;
@@ -282,7 +286,7 @@ class FormService
      */
     public function saving(\Closure $callback = null): static
     {
-        $this->formEvent['saving'] = $callback;
+        $this->formCallback['saving'] = $callback;
 
         return $this;
     }
@@ -292,7 +296,7 @@ class FormService
      */
     public function saved(\Closure $callback = null): static
     {
-        $this->formEvent['saved'] = $callback;
+        $this->formCallback['saved'] = $callback;
 
         return $this;
     }
@@ -302,7 +306,7 @@ class FormService
      */
     public function deleting(\Closure $callback = null): static
     {
-        $this->formEvent['deleting'] = $callback;
+        $this->formCallback['deleting'] = $callback;
 
         return $this;
     }
@@ -312,7 +316,7 @@ class FormService
      */
     public function deleted(\Closure $callback = null): static
     {
-        $this->formEvent['deleted'] = $callback;
+        $this->formCallback['deleted'] = $callback;
 
         return $this;
     }
@@ -322,18 +326,17 @@ class FormService
      */
     public function delete()
     {
-        $this->model = $this->model->findOrFail($this->_id);
-        $this->builderCallback && call_user_func($this->builderCallback, $this);
+        $this->model = $this->model->findOrFail($this->key);
         // 删除前
-        if (isset($this->formEvent['deleting']) && $this->formEvent['deleting'] instanceof \Closure) {
-            call_user_func($this->formEvent['deleting'], $this);
+        if (isset($this->formCallback['deleting']) && $this->formCallback['deleting'] instanceof \Closure) {
+            call_user_func($this->formCallback['deleting'], $this);
         }
         // 删除
         $res = $this->model->delete();
 
         // 删除后
-        if (isset($this->formEvent['deleted']) && $this->formEvent['deleted'] instanceof \Closure) {
-            call_user_func($this->formEvent['deleted'], $this);
+        if (isset($this->formCallback['deleted']) && $this->formCallback['deleted'] instanceof \Closure) {
+            call_user_func($this->formCallback['deleted'], $this);
         }
 
         return $res;
