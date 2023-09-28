@@ -6,29 +6,16 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\ValidationException;
+use Ugly\Base\Enums\FormCallback;
+use Ugly\Base\Enums\FormScene;
 use Ugly\Base\Exceptions\ApiCustomError;
 
 class FormService
 {
     /**
-     * 创建模式.
+     * 当前场景.
      */
-    public const MODE_CREATE = '__create__';
-
-    /**
-     * 编辑模式.
-     */
-    public const MODE_EDIT = '__edit__';
-
-    /**
-     * 删除模式.
-     */
-    public const MODE_DELETE = '__delete__';
-
-    /**
-     * 当前模式.
-     */
-    private string $mode = '';
+    private FormScene $scene;
 
     /**
      * 表单钩子.
@@ -63,18 +50,12 @@ class FormService
     /**
      * 操作model的主键值.
      */
-    private mixed $key = null;
+    private int|string $key;
 
     /**
      * 允许行内编辑的字段.
      */
     private array $allowInlineEditFields = [];
-
-    /**
-     * 行内编辑表单钩子白名单
-     */
-    private array $lineEditCallbackWhitelist = ['validate', 'policy'];
-
 
     /**
      * 构造函数.
@@ -121,11 +102,11 @@ class FormService
     }
 
     /**
-     * 设置form类型.
+     * 设置form场景.
      */
-    public function setMode(string $formMode): static
+    public function setScene(FormScene $scene): static
     {
-        $this->mode = $formMode;
+        $this->scene = $scene;
 
         return $this;
     }
@@ -135,7 +116,7 @@ class FormService
      */
     public function isCreate(): bool
     {
-        return static::MODE_CREATE === $this->mode;
+        return $this->scene === FormScene::Create;
     }
 
     /**
@@ -143,7 +124,16 @@ class FormService
      */
     public function isEdit(): bool
     {
-        return static::MODE_EDIT === $this->mode;
+        return $this->scene === FormScene::Edit;
+    }
+
+    /**
+     * 是否是行内编辑.
+     */
+    public function isInlineEdit(): bool
+    {
+        // 约定PATCH请求为行内编辑的请求
+        return request()->isMethod('PATCH');
     }
 
     /**
@@ -151,7 +141,7 @@ class FormService
      */
     public function isDelete(): bool
     {
-        return static::MODE_DELETE === $this->mode;
+        return $this->scene === FormScene::Delete;
     }
 
     /**
@@ -159,7 +149,7 @@ class FormService
      */
     public function policy(\Closure $closure): static
     {
-        $this->formCallback['policy'] = $closure;
+        $this->formCallback[FormCallback::Policy->value] = $closure;
 
         return $this;
     }
@@ -169,7 +159,7 @@ class FormService
      */
     public function validate(\Closure $closure, array $messages = [], array $attributes = []): static
     {
-        $this->formCallback['validate'] = $closure;
+        $this->formCallback[FormCallback::Validate->value] = $closure;
         $this->validateMessages = array_merge($this->validateMessages, $messages);
         $this->validateAttribute = array_merge($this->validateAttribute, $attributes);
 
@@ -181,7 +171,7 @@ class FormService
      */
     public function handleInput(\Closure $closure): static
     {
-        $this->formCallback['handleInput'] = $closure;
+        $this->formCallback[FormCallback::HandleInput->value] = $closure;
 
         return $this;
     }
@@ -191,8 +181,7 @@ class FormService
      */
     public function unique($column, string $table = null): Unique
     {
-        $table = $table ?: get_class($this->getModel());
-        $rule = Rule::unique($table, $column);
+        $rule = Rule::unique($table ?: get_class($this->getModel()), $column);
         if ($this->isEdit()) {
             $rule->ignore($this->getKey());
         }
@@ -227,30 +216,32 @@ class FormService
         // 请求实例
         $request = request();
 
-        // 约定PATCH请求为行内编辑
-        $isLineEdit = false;
-//        $this->isLineEdit = $request->isMethod('PATCH')
-
         // 编辑模式下先获取需要编辑的资源.
         if ($this->isEdit()) {
             $this->model = $this->model->find($this->key);
         }
 
         // 获取表单验证规则配置.
-        if ($validateFn = $this->checkFormCallback('validate')) {
+        if ($validateFn = $this->checkFormCallback(FormCallback::Validate)) {
             $this->validateRules = call_user_func($validateFn);
-            if ($isLineEdit) {
-                $this->validateRules = $this->generateLineEditValidateRules($request);
-            }
+        }
+
+        // 行内编辑的情况下重新设置表单验证规则
+        if ($this->isInlineEdit()) {
+            $this->validateRules = $this->generateLineEditValidateRules($request);
         }
 
         // 执行表单验证.
         if (! empty($this->validateRules)) {
-            $formData = $request->validate($this->decodeIgnoreFields($this->validateRules), $this->validateMessages, $this->validateAttribute);
+            $formData = $request->validate(
+                $this->decodeIgnoreFields($this->validateRules),
+                $this->validateMessages,
+                $this->validateAttribute
+            );
         }
 
         // 执行策略检查
-        if ($policyFn = $this->checkFormCallback('policy')) {
+        if ($policyFn = $this->checkFormCallback(FormCallback::Policy)) {
             $result = call_user_func($policyFn, $this, $this->model);
             if ($result === false || is_string($result)) {
                 throw new ApiCustomError(is_string($result) ? $result : '非法操作！');
@@ -258,12 +249,12 @@ class FormService
         }
 
         // 处理输入的值
-        if ($handleInputFn = $this->checkFormCallback('handleInput')) {
+        if ($handleInputFn = $this->checkFormCallback(FormCallback::HandleInput)) {
             $formData = $this->decodeIgnoreFields(call_user_func($handleInputFn, $this, $formData));
         }
 
         // 保存前钩子.
-        if ($savingFn = $this->checkFormCallback('saving')) {
+        if ($savingFn = $this->checkFormCallback(FormCallback::Saving)) {
             call_user_func($savingFn, $this, $this->model);
         }
 
@@ -274,7 +265,7 @@ class FormService
         }
 
         // 保存后钩子.
-        if ($savedFn = $this->checkFormCallback('saved')) {
+        if ($savedFn = $this->checkFormCallback(FormCallback::Saved)) {
             call_user_func($savedFn, $this, $request);
         }
 
@@ -286,7 +277,7 @@ class FormService
      */
     public function saving(\Closure $callback = null): static
     {
-        $this->formCallback['saving'] = $callback;
+        $this->formCallback[FormCallback::Saving->value] = $callback;
 
         return $this;
     }
@@ -296,7 +287,7 @@ class FormService
      */
     public function saved(\Closure $callback = null): static
     {
-        $this->formCallback['saved'] = $callback;
+        $this->formCallback[FormCallback::Saved->value] = $callback;
 
         return $this;
     }
@@ -306,7 +297,7 @@ class FormService
      */
     public function deleting(\Closure $callback = null): static
     {
-        $this->formCallback['deleting'] = $callback;
+        $this->formCallback[FormCallback::Deleting->value] = $callback;
 
         return $this;
     }
@@ -316,7 +307,7 @@ class FormService
      */
     public function deleted(\Closure $callback = null): static
     {
-        $this->formCallback['deleted'] = $callback;
+        $this->formCallback[FormCallback::Deleted->value] = $callback;
 
         return $this;
     }
@@ -328,21 +319,21 @@ class FormService
     {
         $this->model = $this->model->find($this->key);
         // 执行策略检查
-        if ($policyFn = $this->checkFormCallback('policy')) {
+        if ($policyFn = $this->checkFormCallback(FormCallback::Policy)) {
             $result = call_user_func($policyFn, $this, $this->model);
             if ($result === false || is_string($result)) {
                 throw new ApiCustomError(is_string($result) ? $result : '非法操作！');
             }
         }
         // 删除前
-        if ($deletingFn = $this->checkFormCallback('deleting')) {
+        if ($deletingFn = $this->checkFormCallback(FormCallback::Deleting)) {
             call_user_func($deletingFn, $this);
         }
         // 删除
         $res = $this->model->delete();
 
         // 删除后
-        if ($deletedFn = $this->checkFormCallback('deleted')) {
+        if ($deletedFn = $this->checkFormCallback(FormCallback::Deleted)) {
             call_user_func($deletedFn, $this->key);
         }
 
@@ -352,14 +343,15 @@ class FormService
     /**
      * 检查表单回调函数是否可以调用，如果可以调用就返回可调用函数.
      */
-    private function checkFormCallback(string $key, $isLineEdit = false): bool|\Closure
+    private function checkFormCallback(FormCallback $key): bool|\Closure
     {
-        if($isLineEdit && !in_array($key, $this->lineEditCallbackWhitelist)) {
-            return in_array($key, data_get($this->allowInlineEditFields, request('field')));
-        }
+        if (isset($this->formCallback[$key->value]) && $this->formCallback[$key->value] instanceof \Closure) {
+            $enabled = true;
+            if ($this->isInlineEdit() && ! in_array($key, [FormCallback::Validate, FormCallback::Policy])) {
+                $enabled = in_array($key, data_get($this->allowInlineEditFields, request('field'), []));
+            }
 
-        if (isset($this->formCallback[$key]) && $this->formCallback[$key] instanceof \Closure) {
-            return $this->formCallback[$key];
+            return $enabled ? $this->formCallback[$key->value] : false;
         }
 
         return false;

@@ -6,8 +6,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
+use Ugly\Base\Enums\FormScene;
 use Ugly\Base\Exceptions\ApiCustomError;
-use Ugly\Base\Services\FormService;
 use Ugly\Base\Traits\ApiResource;
 
 /**
@@ -26,7 +26,7 @@ class QuickFormController extends Controller
     {
         try {
             DB::beginTransaction();
-            $model = $this->form(...$params)->setMode(FormService::MODE_CREATE)->save();
+            $model = $this->form(...$params)->setScene(FormScene::Create)->save();
             DB::commit();
         } catch (ApiCustomError $e) {
             DB::rollBack();
@@ -51,7 +51,7 @@ class QuickFormController extends Controller
     {
         try {
             DB::beginTransaction();
-            $this->form(...$params)->setKey($id)->setMode(FormService::MODE_EDIT)->save();
+            $this->form(...$params)->setKey($id)->setScene(FormScene::Edit)->save();
             DB::commit();
 
             return $this->success(Response::HTTP_OK);
@@ -74,7 +74,7 @@ class QuickFormController extends Controller
     {
         DB::beginTransaction();
         try {
-            $this->form(...$params)->setMode(FormService::MODE_DELETE)->setKey($id)->delete();
+            $this->form(...$params)->setScene(FormScene::Delete)->setKey($id)->delete();
             DB::commit();
 
             return $this->success();
