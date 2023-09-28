@@ -218,12 +218,12 @@ class FormService
 
         // 编辑模式下先获取需要编辑的资源.
         if ($this->isEdit()) {
-            $this->model = $this->model->find($this->key);
+            $this->model = $this->model->findOrFail($this->key);
         }
 
         // 获取表单验证规则配置.
         if ($validateFn = $this->checkFormCallback(FormCallback::Validate)) {
-            $this->validateRules = call_user_func($validateFn);
+            $this->validateRules = call_user_func($validateFn, $this);
         }
 
         // 行内编辑的情况下重新设置表单验证规则
@@ -261,7 +261,15 @@ class FormService
         // 填充数据.
         $allowData = $this->delIgnoreFields($formData);
         if (! empty($allowData)) {
-            $this->model = $this->model->fill($allowData);
+            if ($this->isEdit()) {
+                foreach ($allowData as $key => $val) {
+                    $this->model->$key = $val;
+                }
+                $this->model->save();
+            }
+            if ($this->isCreate()) {
+                $this->model = $this->model->create($allowData);
+            }
         }
 
         // 保存后钩子.
@@ -317,7 +325,7 @@ class FormService
      */
     public function delete()
     {
-        $this->model = $this->model->find($this->key);
+        $this->model = $this->model->findOrFail($this->key);
         // 执行策略检查
         if ($policyFn = $this->checkFormCallback(FormCallback::Policy)) {
             $result = call_user_func($policyFn, $this, $this->model);
@@ -365,9 +373,10 @@ class FormService
         $results = [];
         foreach ($fields as $key => $val) {
             if (str_starts_with($key, '!')) {
-                $results[substr($key, 1)] = $val;
+                $realKey = substr($key, 1);
+                $results[$realKey] = $val;
                 if (! str_contains($key, '.')) {
-                    $this->ignoreFields[] = $key;
+                    $this->ignoreFields[] = $realKey;
                 }
             } else {
                 $results[$key] = $val;
@@ -393,10 +402,10 @@ class FormService
     {
         $validMessage = [];
         if (! $request->has('field')) {
-            $validMessage['field'] = '`field` is required';
+            $validMessage['field'] = 'field is required';
         }
         if (! $request->has('value')) {
-            $validMessage['value'] = '`value` is required';
+            $validMessage['value'] = 'value is required';
         }
         if (! empty($validMessage)) {
             throw ValidationException::withMessages($validMessage);
