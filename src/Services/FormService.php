@@ -2,6 +2,9 @@
 
 namespace Ugly\Base\Services;
 
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
+
 class FormService
 {
     /**
@@ -152,7 +155,7 @@ class FormService
     /**
      * 设置模型策略.
      */
-    public function policy(\Closure $closure)
+    public function policy(\Closure $closure): static
     {
         $this->formCallback['policy'] = $closure;
 
@@ -162,11 +165,27 @@ class FormService
     /**
      * 设置验证规则.
      */
-    public function validate(\Closure $closure): static
+    public function validate(\Closure $closure, array $messages = [], array $attributes = []): static
     {
         $this->formCallback['validate'] = $closure;
+        $this->validateMessages = array_merge($this->validateMessages, $messages);
+        $this->validateAttribute = array_merge($this->validateAttribute, $attributes);
 
         return $this;
+    }
+
+    /**
+     * 表单唯一验证.
+     */
+    public function unique($column, string $table = null): Unique
+    {
+        $table = $table ?: get_class($this->getModel());
+        $rule = Rule::unique($table, $column);
+        if ($this->isEdit()) {
+            $rule->ignore($this->getKey());
+        }
+
+        return $rule;
     }
 
     /**
@@ -231,8 +250,6 @@ class FormService
         // 表单数据.
         $formData = [];
         //        $this->validateRules = array_merge($this->validateRules, $rules);
-        //        $this->validateMessages = array_merge($this->validateMessages, $messages);
-        //        $this->validateAttribute = array_merge($this->validateAttribute, $attributes);
 
         // 字段验证
         if (! empty($this->validateRules)) {
