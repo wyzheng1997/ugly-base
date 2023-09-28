@@ -2,8 +2,11 @@
 
 namespace Ugly\Base\Services;
 
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
+use Illuminate\Validation\ValidationException;
+use Ugly\Base\Exceptions\ApiCustomError;
 
 class FormService
 {
@@ -28,7 +31,7 @@ class FormService
     private string $mode = '';
 
     /**
-     * 表单事件.
+     * 表单钩子.
      */
     private array $formCallback = [];
 
@@ -48,19 +51,14 @@ class FormService
     private array $validateAttribute = [];
 
     /**
-     * 表单额外字段.
-     */
-    private array $extraFields = [];
-
-    /**
-     * 忽略的字段.
+     * 需要忽略的字段.
      */
     private array $ignoreFields = [];
 
     /**
      * 需要处理的模型.
      */
-    private $model;
+    private mixed $model;
 
     /**
      * 操作model的主键值.
@@ -73,6 +71,12 @@ class FormService
     private array $allowInlineEditFields = [];
 
     /**
+     * 行内编辑表单钩子白名单
+     */
+    private array $lineEditCallbackWhitelist = ['validate', 'policy'];
+
+
+    /**
      * 构造函数.
      */
     private function __construct($model)
@@ -82,8 +86,6 @@ class FormService
 
     /**
      * 创建实例.
-     *
-     * @return FormService
      */
     public static function make($model): static
     {
@@ -175,6 +177,16 @@ class FormService
     }
 
     /**
+     * 设置处理输入的回调.
+     */
+    public function handleInput(\Closure $closure): static
+    {
+        $this->formCallback['handleInput'] = $closure;
+
+        return $this;
+    }
+
+    /**
      * 表单唯一验证.
      */
     public function unique($column, string $table = null): Unique
@@ -189,33 +201,17 @@ class FormService
     }
 
     /**
-     * 设置额外请求字段以及默认值.
-     *
-     * @example $form->extraFields(['note', 'attach' => [], 'avatar' => 'default.png']);
-     */
-    public function extraFields(array $fields): static
-    {
-        $this->extraFields = array_merge($this->extraFields, $fields);
-
-        return $this;
-    }
-
-    /**
-     * 设置忽略字段.
-     */
-    public function ignoreFields(array $fields): static
-    {
-        $this->ignoreFields = array_merge($this->ignoreFields, $fields);
-
-        return $this;
-    }
-
-    /**
      * 设置允许行内编辑的字段.
      */
     public function inlineEdit(array $fields): static
     {
-        $this->allowInlineEditFields = array_merge($this->allowInlineEditFields, $fields);
+        foreach ($fields as $key => $val) {
+            if (is_numeric($key)) {
+                $this->allowInlineEditFields[$val] = [];
+            } elseif (is_array($val)) {
+                $this->allowInlineEditFields[$key] = $val;
+            }
+        }
 
         return $this;
     }
@@ -225,74 +221,61 @@ class FormService
      */
     public function save()
     {
-        if ($this->isEdit()) {
-            $this->model = $this->model->findOrFail($this->key);
-        }
+        // 用户存储合法的请求数据
+        $formData = [];
 
-        // 当前请求.
+        // 请求实例
         $request = request();
 
-        // 行内编辑模式 start >>>>>>>>>>>>>>>>>>.
-        if ($this->isEdit() && $request->boolean('_inline_edit_')) {
-            $field = $request->input('field');
-            if (! in_array($field, $this->allowInlineEditFields)) {
-                throw new \Exception($field.'不允许编辑.');
-            }
-            if (isset($this->validateRules[$field])) { // 单独验证字段.
-                $request->validate(['value' => $this->validateRules[$field]]);
-            }
-            $this->model->update([$field => $request->input('value')]);
+        // 约定PATCH请求为行内编辑
+        $isLineEdit = false;
+//        $this->isLineEdit = $request->isMethod('PATCH')
 
-            return $this->model;
+        // 编辑模式下先获取需要编辑的资源.
+        if ($this->isEdit()) {
+            $this->model = $this->model->find($this->key);
         }
-        // <<<<<<<<<<<<<<<<<< end 行内编辑模式.
 
-        // 表单数据.
-        $formData = [];
-        //        $this->validateRules = array_merge($this->validateRules, $rules);
+        // 获取表单验证规则配置.
+        if ($validateFn = $this->checkFormCallback('validate')) {
+            $this->validateRules = call_user_func($validateFn);
+            if ($isLineEdit) {
+                $this->validateRules = $this->generateLineEditValidateRules($request);
+            }
+        }
 
-        // 字段验证
+        // 执行表单验证.
         if (! empty($this->validateRules)) {
-            $formData = $request->validate($this->validateRules, $this->validateMessages, $this->validateAttribute);
+            $formData = $request->validate($this->decodeIgnoreFields($this->validateRules), $this->validateMessages, $this->validateAttribute);
         }
 
-        // 获取额外请求字段.
-        foreach ($this->extraFields as $field => $default) {
-            if (is_numeric($field)) {
-                $field = $default;
-                $default = null;
-            }
-            $formData[$field] = $request->input($field, $default);
-        }
-
-        // 保存前钩子，调整formData.
-        if (isset($this->formCallback['saving']) && $this->formCallback['saving'] instanceof \Closure) {
-            $formData = call_user_func($this->formCallback['saving'], $this, $formData, $request);
-            if (! is_array($formData)) {
-                throw new \Exception('saving钩子必须返回数组');
+        // 执行策略检查
+        if ($policyFn = $this->checkFormCallback('policy')) {
+            $result = call_user_func($policyFn, $this, $this->model);
+            if ($result === false || is_string($result)) {
+                throw new ApiCustomError(is_string($result) ? $result : '非法操作！');
             }
         }
 
-        // 忽略字段.
-        if (! empty($this->ignoreFields)) {
-            foreach ($this->ignoreFields as $field) {
-                unset($formData[$field]);
-            }
+        // 处理输入的值
+        if ($handleInputFn = $this->checkFormCallback('handleInput')) {
+            $formData = $this->decodeIgnoreFields(call_user_func($handleInputFn, $this, $formData));
         }
 
-        if ($this->isEdit()) { // 更新
-            foreach ($formData as $key => $val) {
-                $this->model->$key = $val;
-            }
-            $this->model->save();
-        } else {
-            // 创建
-            $this->model = $this->model->create($formData);
+        // 保存前钩子.
+        if ($savingFn = $this->checkFormCallback('saving')) {
+            call_user_func($savingFn, $this, $this->model);
+        }
+
+        // 填充数据.
+        $allowData = $this->delIgnoreFields($formData);
+        if (! empty($allowData)) {
+            $this->model = $this->model->fill($allowData);
         }
 
         // 保存后钩子.
-        if (isset($this->formCallback['saved']) && $this->formCallback['saved'] instanceof \Closure) {
-            call_user_func($this->formCallback['saved'], $this, $request);
+        if ($savedFn = $this->checkFormCallback('saved')) {
+            call_user_func($savedFn, $this, $request);
         }
 
         return $this->model;
@@ -343,19 +326,104 @@ class FormService
      */
     public function delete()
     {
-        $this->model = $this->model->findOrFail($this->key);
+        $this->model = $this->model->find($this->key);
+        // 执行策略检查
+        if ($policyFn = $this->checkFormCallback('policy')) {
+            $result = call_user_func($policyFn, $this, $this->model);
+            if ($result === false || is_string($result)) {
+                throw new ApiCustomError(is_string($result) ? $result : '非法操作！');
+            }
+        }
         // 删除前
-        if (isset($this->formCallback['deleting']) && $this->formCallback['deleting'] instanceof \Closure) {
-            call_user_func($this->formCallback['deleting'], $this);
+        if ($deletingFn = $this->checkFormCallback('deleting')) {
+            call_user_func($deletingFn, $this);
         }
         // 删除
         $res = $this->model->delete();
 
         // 删除后
-        if (isset($this->formCallback['deleted']) && $this->formCallback['deleted'] instanceof \Closure) {
-            call_user_func($this->formCallback['deleted'], $this);
+        if ($deletedFn = $this->checkFormCallback('deleted')) {
+            call_user_func($deletedFn, $this->key);
         }
 
         return $res;
+    }
+
+    /**
+     * 检查表单回调函数是否可以调用，如果可以调用就返回可调用函数.
+     */
+    private function checkFormCallback(string $key, $isLineEdit = false): bool|\Closure
+    {
+        if($isLineEdit && !in_array($key, $this->lineEditCallbackWhitelist)) {
+            return in_array($key, data_get($this->allowInlineEditFields, request('field')));
+        }
+
+        if (isset($this->formCallback[$key]) && $this->formCallback[$key] instanceof \Closure) {
+            return $this->formCallback[$key];
+        }
+
+        return false;
+    }
+
+    /**
+     * 解析需要忽略的字段.
+     */
+    private function decodeIgnoreFields(array $fields): array
+    {
+        $results = [];
+        foreach ($fields as $key => $val) {
+            if (str_starts_with($key, '!')) {
+                $results[substr($key, 1)] = $val;
+                if (! str_contains($key, '.')) {
+                    $this->ignoreFields[] = $key;
+                }
+            } else {
+                $results[$key] = $val;
+            }
+        }
+
+        return $results;
+    }
+
+    private function delIgnoreFields(array $formData): array
+    {
+        if (empty($this->ignoreFields)) {
+            return $formData;
+        }
+
+        return array_diff_key($formData, array_flip($this->ignoreFields));
+    }
+
+    /**
+     * 生成行内编辑表单验证规则.
+     */
+    private function generateLineEditValidateRules(Request $request): array
+    {
+        $validMessage = [];
+        if (! $request->has('field')) {
+            $validMessage['field'] = '`field` is required';
+        }
+        if (! $request->has('value')) {
+            $validMessage['value'] = '`value` is required';
+        }
+        if (! empty($validMessage)) {
+            throw ValidationException::withMessages($validMessage);
+        }
+
+        $field = $request->input('field');
+        $value = $request->input('value');
+
+        // 检查是否允许行内编辑
+        if (! in_array($field, array_keys($this->allowInlineEditFields))) {
+            throw new ApiCustomError($field.'不允许修改！');
+        }
+
+        // 合并到请求中
+        $request->merge([$field => $value]);
+
+        // 返回字段对应的验证规则
+        return array_filter($this->validateRules, function ($key) use ($field) {
+            return str_starts_with($key, $field) || str_starts_with($key, "!$field");
+        }, ARRAY_FILTER_USE_KEY);
     }
 }
