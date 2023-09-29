@@ -179,7 +179,7 @@ class FormService
     /**
      * 表单唯一验证.
      */
-    public function unique($column, string $table = null): Unique
+    public function unique(string $table = null, $column = 'NULL'): Unique
     {
         $rule = Rule::unique($table ?: get_class($this->getModel()), $column);
         if ($this->isEdit()) {
