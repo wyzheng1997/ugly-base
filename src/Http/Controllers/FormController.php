@@ -13,7 +13,7 @@ use Ugly\Base\Traits\ApiResource;
 /**
  * 快速表单.
  */
-class QuickFormController extends Controller
+class FormController extends Controller
 {
     use ApiResource;
 
