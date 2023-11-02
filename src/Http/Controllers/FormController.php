@@ -8,25 +8,31 @@ use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 use Ugly\Base\Enums\FormScene;
 use Ugly\Base\Exceptions\ApiCustomError;
+use Ugly\Base\Services\FormService;
 use Ugly\Base\Traits\ApiResource;
 
 /**
  * 快速表单.
  */
-class FormController extends Controller
+abstract class FormController extends Controller
 {
     use ApiResource;
+
+    /**
+     * 抽象表单配置类
+     */
+    abstract protected function form(): FormService;
 
     /**
      * 保存.
      *
      * @throws \Throwable
      */
-    public function store(...$params): JsonResponse
+    public function store(): JsonResponse
     {
         try {
             DB::beginTransaction();
-            $model = $this->form(...$params)->setScene(FormScene::Create)->save();
+            $model = $this->form()->setScene(FormScene::Create)->save();
             DB::commit();
         } catch (ApiCustomError $e) {
             DB::rollBack();
@@ -47,11 +53,11 @@ class FormController extends Controller
      *
      * @throws \Throwable
      */
-    public function update($id, ...$params): JsonResponse
+    public function update($id): JsonResponse
     {
         try {
             DB::beginTransaction();
-            $this->form(...$params)->setKey($id)->setScene(FormScene::Edit)->save();
+            $this->form()->setKey($id)->setScene(FormScene::Edit)->save();
             DB::commit();
 
             return $this->success(Response::HTTP_OK);
@@ -70,11 +76,11 @@ class FormController extends Controller
      *
      * @throws \Throwable
      */
-    public function destroy($id, ...$params): JsonResponse
+    public function destroy($id): JsonResponse
     {
         DB::beginTransaction();
         try {
-            $this->form(...$params)->setScene(FormScene::Delete)->setKey($id)->delete();
+            $this->form()->setScene(FormScene::Delete)->setKey($id)->delete();
             DB::commit();
 
             return $this->success();
