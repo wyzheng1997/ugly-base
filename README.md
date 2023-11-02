@@ -8,7 +8,7 @@ ugly-base
 - [x] json响应中间件`AcceptJson`
 - [x] 统一响应`ApiResource`
 - [x] 扩展ORM搜索查询能力`SearchModel`
-- [x] 快速增删改控制器`QuickFormController`
+- [x] 快速增删改控制器`FormController`
 - [x] 属性修改器
   - [x] 金额(分转元)`Amount`
 - [x] 常用工具函数
