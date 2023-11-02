@@ -157,9 +157,9 @@ class FormService
     /**
      * 设置验证规则.
      */
-    public function validate(\Closure $closure, array $messages = [], array $attributes = []): static
+    public function validate(\Closure|array $closure, array $messages = [], array $attributes = []): static
     {
-        $this->formCallback[FormCallback::Validate->value] = $closure;
+        $this->formCallback[FormCallback::Validate->value] = is_array($closure) ? fn () => $closure : $closure;
         $this->validateMessages = array_merge($this->validateMessages, $messages);
         $this->validateAttribute = array_merge($this->validateAttribute, $attributes);
 
