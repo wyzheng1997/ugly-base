@@ -210,7 +210,7 @@ class FormService
      */
     public function save()
     {
-        // 用户存储合法的请求数据
+        // 用于存储合法的请求数据
         $formData = [];
 
         // 请求实例
@@ -386,6 +386,9 @@ class FormService
         return $results;
     }
 
+    /**
+     * 删除需要忽略的字段.
+     */
     private function delIgnoreFields(array $formData): array
     {
         if (empty($this->ignoreFields)) {
