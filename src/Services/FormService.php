@@ -58,6 +58,11 @@ class FormService
     private array $allowInlineEditFields = [];
 
     /**
+     * 存储通过表单验证和handleInput处理后的数据.
+     */
+    public array $safeFormData = [];
+
+    /**
      * 构造函数.
      */
     private function __construct($model)
@@ -96,9 +101,9 @@ class FormService
     /**
      * 获取模型ID.
      */
-    public function getKey(): mixed
+    public function getKey(): string|int
     {
-        return $this->key;
+        return $this->key ?? $this->model->getKey();
     }
 
     /**
@@ -210,9 +215,6 @@ class FormService
      */
     public function save()
     {
-        // 用于存储合法的请求数据
-        $formData = [];
-
         // 请求实例
         $request = request();
 
@@ -233,7 +235,7 @@ class FormService
 
         // 执行表单验证.
         if (! empty($this->validateRules)) {
-            $formData = $request->validate(
+            $this->safeFormData = $request->validate(
                 $this->decodeIgnoreFields($this->validateRules),
                 $this->validateMessages,
                 $this->validateAttribute
@@ -250,7 +252,7 @@ class FormService
 
         // 处理输入的值
         if ($handleInputFn = $this->checkFormCallback(FormCallback::HandleInput)) {
-            $formData = $this->decodeIgnoreFields(call_user_func($handleInputFn, $this, $formData));
+            $this->safeFormData = $this->decodeIgnoreFields(call_user_func($handleInputFn, $this));
         }
 
         // 保存前钩子.
@@ -259,7 +261,7 @@ class FormService
         }
 
         // 填充数据.
-        $allowData = $this->delIgnoreFields($formData);
+        $allowData = $this->delIgnoreFields($this->safeFormData);
         if (! empty($allowData)) {
             if ($this->isEdit()) {
                 foreach ($allowData as $key => $val) {
@@ -274,7 +276,7 @@ class FormService
 
         // 保存后钩子.
         if ($savedFn = $this->checkFormCallback(FormCallback::Saved)) {
-            call_user_func($savedFn, $this, $request);
+            call_user_func($savedFn, $this);
         }
 
         return $this->model;
