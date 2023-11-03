@@ -4,7 +4,7 @@ ugly-base
 
 > laravel开发的基础包，封装一些基础功能。
 
-### 控制器
+### 功能清单
 - [x] json响应中间件`AcceptJson`
 - [x] 统一响应`ApiResource`
 - [x] 扩展ORM搜索查询能力`SearchModel`
