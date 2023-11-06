@@ -52,7 +52,7 @@ class SimpleFormController extends Controller
             // 表单验证
             try {
                 DB::beginTransaction();
-                $form->handle($form->validate($request));
+                $form->handle($form->policy($request));
                 DB::commit();
 
                 return $this->success($form->default());

@@ -7,9 +7,9 @@ use Illuminate\Http\Request;
 interface SimpleForm
 {
     /**
-     * 表单验证.
+     * 表单册罗.
      */
-    public function validate(Request $request): array;
+    public function policy(Request $request): array;
 
     /**
      * 处理表单.
