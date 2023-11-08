@@ -28,7 +28,7 @@ class SimpleFormController extends Controller
      *
      * @return JsonResponse|void
      */
-    public function index(string $type)
+    public function getForm(string $type)
     {
         if (isset($this->form[$type]) && isset(class_implements($this->form[$type])[SimpleForm::class])) {
             $form = new $this->form[$type];
@@ -45,7 +45,7 @@ class SimpleFormController extends Controller
      *
      * @throws \Throwable
      */
-    public function update(Request $request, $type)
+    public function saveForm(Request $request, $type)
     {
         if (isset($this->form[$type]) && isset(class_implements($this->form[$type])[SimpleForm::class])) {
             $form = new $this->form[$type];
