@@ -55,7 +55,7 @@ trait SearchModel
 
                 // 自定义查询
                 if ($operator instanceof \Closure) {
-                    call_user_func($operator, $query, $input);
+                    $query->where(fn ($q) => call_user_func($operator, $q, $input));
 
                     continue; // 进入下一个查询参数
                 }
