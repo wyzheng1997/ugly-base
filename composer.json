@@ -13,6 +13,9 @@
         "laravel/framework": ">=10",
         "ext-bcmath": "*"
     },
+    "require-dev": {
+        "laravel/pint": "^1.10"
+    },
     "autoload": {
         "psr-4": {
             "Ugly\\Base\\": "src/"
@@ -28,7 +31,7 @@
             ]
         }
     },
-    "require-dev": {
-        "laravel/pint": "^1.10"
+    "scripts": {
+        "pint": "vendor/bin/pint"
     }
 }

@@ -23,3 +23,26 @@ if (! function_exists('arr2tree')) {
         return $tree;
     }
 }
+
+if (! function_exists('sys_config')) {
+    /**
+     * 系统配置辅助函数.
+     */
+    function sys_config(array|string $key = null, mixed $default = null)
+    {
+        /**
+         * @var \Ugly\Base\Support\Config $config
+         */
+        $config = app('ugly.config');
+        if (is_null($key)) {
+            return $config;
+        }
+        if (is_array($key)) {
+            // 存储.
+            return $config->set($key);
+        } else {
+            // 读取.
+            return $config->get($key, $default);
+        }
+    }
+}
