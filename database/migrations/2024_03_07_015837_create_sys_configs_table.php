@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('sys_configs', function (Blueprint $table) {
+            $table->comment('系统配置表');
             $table->string('slug')->primary()->comment('唯一标识符');
             $table->longText('value')->nullable()->comment('值');
             $table->string('desc')->nullable()->comment('描述');
