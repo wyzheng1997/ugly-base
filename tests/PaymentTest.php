@@ -2,9 +2,32 @@
 
 namespace Ugly\Base\Tests;
 
+use Illuminate\Http\Request;
 use Ugly\Base\Enums\PaymentStatus;
 use Ugly\Base\Models\Payment;
-use Ugly\Base\Support\PaymentChannel;
+
+class PaymentTestChannel
+{
+    public static function pay($payment, array $data = [])
+    {
+        return 'pay';
+    }
+
+    public static function refund($payment, array $data = [])
+    {
+        return 'refund';
+    }
+
+    public static function transfer($payment, array $data = [])
+    {
+        return 'transfer';
+    }
+
+    public static function notify(Request $request)
+    {
+        return [];
+    }
+}
 
 class PaymentTest extends TestCase
 {
@@ -13,7 +36,7 @@ class PaymentTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->payment = Payment::pay(PaymentChannel::class, 12.5, '', now()->addMinutes(30));
+        $this->payment = Payment::pay(PaymentTestChannel::class, 12.5, '', now()->addMinutes(30));
     }
 
     public function test_create_pay()
