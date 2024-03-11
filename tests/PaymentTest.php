@@ -52,4 +52,10 @@ class PaymentTest extends TestCase
         $res = $this->payment->refund(12.5)->send();
         $this->assertTrue($res === 'refund');
     }
+
+    public function test_create_transfer()
+    {
+        $res = Payment::transfer(PaymentTestChannel::class, 12.5)->send();
+        $this->assertTrue($res === 'transfer');
+    }
 }

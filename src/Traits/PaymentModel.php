@@ -93,7 +93,7 @@ trait PaymentModel
     /**
      * 创建转账单.
      */
-    public function transfer(string $channel, float $amount, string $job = '', array $attach = [], Model|Builder $merchant = null): Model|Builder
+    public static function transfer(string $channel, float $amount, string $job = '', array $attach = [], Model|Builder $merchant = null): Model|Builder
     {
         $data = compact('channel', 'amount', 'job', 'attach');
         $data['type'] = PaymentType::Transfer;
