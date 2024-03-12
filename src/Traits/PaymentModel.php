@@ -19,11 +19,31 @@ trait PaymentModel
     /**
      * 生成唯一号.
      */
-    public static function generateNo(): string
+    protected static function generateNo(): string
     {
         [$m, $s] = explode(' ', microtime());
 
         return date('ymdHis', $s).substr($m, 2).rand(10, 99);
+    }
+
+    /**
+     * 获取支付通道类.
+     *
+     * @param  string  $channel 支付通道
+     *
+     * @throws ApiCustomError
+     */
+    private static function getChannelClass(string $channel): string
+    {
+        if (class_exists($channel)) {
+            return $channel;
+        } else {
+            $channel_class = config('ugly.payment.channel.'.$channel);
+            if ($channel_class && class_exists($channel_class)) {
+                return $channel_class;
+            }
+            throw new ApiCustomError('支付通道不存在:'.$channel);
+        }
     }
 
     /**
@@ -103,10 +123,12 @@ trait PaymentModel
 
     /**
      * 发送请求，获取第三方接口响应数据.
+     *
+     * @throws ApiCustomError
      */
     public function send(array $data = []): mixed
     {
-        $channel = $this->getAttribute('channel');
+        $channel = self::getChannelClass($this->getAttribute('channel'));
         $method = strtolower($this->getAttribute('type')->name);
 
         return call_user_func([$channel, $method], $this, $data);

@@ -11,12 +11,16 @@ class UglyBaseServiceProvider extends ServiceProvider
     {
         // 注册系统配置服务.
         $this->app->singleton('ugly.config', Config::class);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([]);
+        }
     }
 
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->publishes([__DIR__.'/../database/migrations' => database_path('migrations')], 'ugly-migrations');
+            $this->publishes([__DIR__.'/../config' => config_path()], 'ugly-base-config');
         }
     }
 }

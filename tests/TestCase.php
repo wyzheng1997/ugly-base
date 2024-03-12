@@ -2,6 +2,7 @@
 
 namespace Ugly\Base\Tests;
 
+use Illuminate\Config\Repository;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Ugly\Base\UglyBaseServiceProvider;
 
@@ -11,6 +12,19 @@ class TestCase extends Orchestra
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->artisan('migrate');
+    }
+
+    protected function defineEnvironment($app)
+    {
+        tap($app['config'], function (Repository $config) {
+            $config->set('ugly.config', ['enable' => true]);
+            $config->set('ugly.payment', [
+                'enable' => true,
+                'channel' => [
+                    'test' => PaymentTestChannel::class,
+                ],
+            ]);
+        });
     }
 
     protected function getPackageProviders($app): array
