@@ -15,6 +15,7 @@ return new class extends Migration
             $table->comment('支付记录表');
             $table->id();
             $table->string('no')->unique()->comment('支付编号');
+            $table->string('order_no')->nullable()->comment('内部订单号');
             $table->string('channel')->comment('支付渠道');
             $table->unsignedBigInteger('amount')->comment('支付金额/分');
             $table->unsignedTinyInteger('type')->index()->comment('支付类型: 1付款 2退款 3转账');

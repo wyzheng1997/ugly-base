@@ -69,15 +69,16 @@ trait PaymentModel
      * 创建付款.
      *
      * @param  string  $channel 支付通道.
-     * @param  float  $amount 支付金额/分.
+     * @param  float  $amount 支付金额/元.
      * @param  string  $job 成功后需要执行的任务.
      * @param  Carbon|string|null  $expire_at 过期时间.
+     * @param  string|null  $order_no 内部订单号.
      * @param  array  $attach 附加信息.
      * @param  Model|Builder|null  $merchant 商户.
      */
-    public static function pay(string $channel, float $amount, string $job, Carbon|string $expire_at = null, array $attach = [], Model|Builder $merchant = null): Model|Builder
+    public static function pay(string $channel, float $amount, string $job, string $order_no = null, array $attach = [], Carbon|string $expire_at = null, Model|Builder $merchant = null): Model|Builder
     {
-        $data = compact('channel', 'amount', 'job', 'expire_at', 'attach');
+        $data = compact('channel', 'amount', 'job', 'expire_at', 'order_no', 'attach');
         $data['type'] = PaymentType::Pay;
 
         return self::defaultCreate($data, $merchant);
@@ -86,7 +87,7 @@ trait PaymentModel
     /**
      * 支付单退款.
      *
-     * @param  float  $amount 退款金额/分.
+     * @param  float  $amount 退款金额/元.
      * @param  string  $job 退款后需要执行的任务.
      * @param  array  $attach 附加信息.
      * @param  Model|Builder|null  $merchant 商户.
@@ -106,14 +107,21 @@ trait PaymentModel
         $data['type'] = PaymentType::Refund;
         $data['channel'] = $this->getAttribute('channel');
         $data['payment_id'] = $this->getKey();
+        $data['order_no'] = $this->getAttribute('order_no');
 
         return self::defaultCreate($data, $merchant);
     }
 
     /**
      * 创建转账单.
+     *
+     * @param  string  $channel 支付通道.
+     * @param  float  $amount 金额/元.
+     * @param  string|null  $job 成功后需要执行的任务.
+     * @param  array  $attach 附加信息.
+     * @param  Model|Builder|null  $merchant 商户.
      */
-    public static function transfer(string $channel, float $amount, string $job = '', array $attach = [], Model|Builder $merchant = null): Model|Builder
+    public static function transfer(string $channel, float $amount, string $job = null, array $attach = [], Model|Builder $merchant = null): Model|Builder
     {
         $data = compact('channel', 'amount', 'job', 'attach');
         $data['type'] = PaymentType::Transfer;
