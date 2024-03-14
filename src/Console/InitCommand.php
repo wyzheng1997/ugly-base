@@ -4,31 +4,37 @@ namespace Ugly\Base\Console;
 
 use Illuminate\Console\Command;
 
-class InstallCommand extends Command
+class InitCommand extends Command
 {
-    protected $signature = 'ugly:install';
+    protected $signature = 'ugly:init';
 
-    protected $description = 'Install Ugly';
+    protected $description = '初始化ugly配置';
 
     public function handle(): void
     {
         if (config('ugly.config.enable')) {
-            $this->installConfig();
+            $this->initConfig();
         }
         if (config('ugly.payment.enable')) {
-            $this->installPayment();
+            $this->initPayment();
         }
 
         // 执行迁移
         $this->call('migrate');
     }
 
-    private function installConfig(): void
+    /**
+     * 初始化系统配置功能.
+     */
+    private function initConfig(): void
     {
         $this->generateMigration('sys_configs_table');
     }
 
-    private function installPayment(): void
+    /**
+     * 初始化支付功能.
+     */
+    private function initPayment(): void
     {
         $this->generateMigration('payments_table');
     }

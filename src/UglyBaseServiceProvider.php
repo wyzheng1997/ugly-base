@@ -3,7 +3,7 @@
 namespace Ugly\Base;
 
 use Illuminate\Support\ServiceProvider;
-use Ugly\Base\Console\InstallCommand;
+use Ugly\Base\Console\InitCommand;
 use Ugly\Base\Support\Config;
 
 class UglyBaseServiceProvider extends ServiceProvider
@@ -15,7 +15,7 @@ class UglyBaseServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
-                InstallCommand::class,
+                InitCommand::class,
             ]);
         }
     }

@@ -18,6 +18,7 @@ ugly-base
   - [x] 数组/集合 转换成树级结构`arr2tree`
   - [x] 系统配置辅助函数`sys_config`
 - [ ] 命令
+  - [x] 初始化配置ugly`ugly:init`
   - [ ] 创建CURD控制器
   - [ ] 创建简单表单
   - [ ] 创建支付通道
