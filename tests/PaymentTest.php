@@ -36,7 +36,7 @@ class PaymentTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->payment = Payment::pay('test', 12.5, '', now()->addMinutes(30));
+        $this->payment = Payment::pay(PaymentTestChannel::class, 12.5, 'test', now()->addMinutes(30));
     }
 
     public function test_create_pay()
@@ -55,7 +55,7 @@ class PaymentTest extends TestCase
 
     public function test_create_transfer()
     {
-        $res = Payment::transfer('test', 12.5)->send();
+        $res = Payment::transfer(PaymentTestChannel::class, 12.5)->send();
         $this->assertTrue($res === 'transfer');
     }
 }

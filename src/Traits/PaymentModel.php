@@ -38,10 +38,6 @@ trait PaymentModel
         if (class_exists($channel)) {
             return $channel;
         } else {
-            $channel_class = config('ugly.payment.channel.'.$channel);
-            if ($channel_class && class_exists($channel_class)) {
-                return $channel_class;
-            }
             throw new ApiCustomError('支付通道不存在:'.$channel);
         }
     }

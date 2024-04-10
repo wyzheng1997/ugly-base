@@ -18,12 +18,7 @@ class TestCase extends Orchestra
     {
         tap($app['config'], function (Repository $config) {
             $config->set('ugly.config', ['enable' => true]);
-            $config->set('ugly.payment', [
-                'enable' => true,
-                'channel' => [
-                    'test' => PaymentTestChannel::class,
-                ],
-            ]);
+            $config->set('ugly.payment', ['enable' => true]);
         });
     }
 

@@ -15,8 +15,5 @@ return [
     // 支付设置
     'payment' => [
         'enable' => true,
-        'channel' => [
-            // 支付渠道
-        ],
     ],
 ];

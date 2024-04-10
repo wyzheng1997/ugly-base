@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('remark')->nullable()->comment('备注');
             $table->string('notification_no')->nullable()->comment('第三方支付通知单号');
             $table->json('notification_data')->nullable()->comment('第三方支付通知原始数据');
-            $table->string('job')->comment('回调任务');
+            $table->string('job')->nullable()->comment('回调任务');
             $table->json('attach')->nullable()->comment('附加信息');
             $table->unsignedBigInteger('payment_id')->nullable()->comment('退款时关联支付单ID');
             $table->morphs('merchant');
