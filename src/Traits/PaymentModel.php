@@ -49,20 +49,19 @@ trait PaymentModel
     /**
      * 默认创建.
      *
+     * @param  Model|Builder|null  $payer 支付者.
      * @param  Model|Builder|null  $merchant 商户.
      */
-    private static function defaultCreate(array $data, Model|Builder $merchant = null): Model|Builder
+    private static function defaultCreate(array $data, Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
     {
-        $default = [
+        return self::query()->create(array_merge([
             'no' => self::generateNo(),
             'status' => PaymentStatus::Processing,
-        ];
-        if ($merchant) {
-            $default['merchant_id'] = $merchant->getKey();
-            $default['merchant_type'] = $merchant->getMorphClass();
-        }
-
-        return self::query()->create(array_merge($default, $data));
+            'merchant_id' => $merchant?->getKey() ?: 0,
+            'merchant_type' => $merchant?->getMorphClass() ?: '',
+            'payer_id' => $payer?->getKey() ?: 0,
+            'payer_type' => $payer?->getMorphClass() ?: '',
+        ], $data));
     }
 
     /**
