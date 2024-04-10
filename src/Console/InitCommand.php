@@ -28,6 +28,7 @@ class InitCommand extends Command
             $default = config('ugly.config.default');
             if (is_array($default) && count($default)) {
                 SysConfig::query()->insert(config('ugly.config.default'));
+                $this->info('已写入默认配置项');
             }
         }
     }
