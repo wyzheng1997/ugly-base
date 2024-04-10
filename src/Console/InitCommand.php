@@ -3,6 +3,7 @@
 namespace Ugly\Base\Console;
 
 use Illuminate\Console\Command;
+use Ugly\Base\Models\SysConfig;
 
 class InitCommand extends Command
 {
@@ -21,6 +22,14 @@ class InitCommand extends Command
 
         // 执行迁移
         $this->call('migrate');
+
+        // 执行填充
+        if (config('ugly.config.enable')) {
+            $default = config('ugly.config.default');
+            if (is_array($default) && count($default)) {
+                SysConfig::query()->insert(config('ugly.config.default'));
+            }
+        }
     }
 
     /**
