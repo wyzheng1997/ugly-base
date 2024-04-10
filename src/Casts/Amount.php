@@ -10,6 +10,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Amount implements CastsAttributes
 {
+    public function __construct(protected ?int $scale = 2)
+    {
+    }
+
     /**
      * Cast the given value.
      *
@@ -17,7 +21,7 @@ class Amount implements CastsAttributes
      */
     public function get(Model $model, string $key, mixed $value, array $attributes): float
     {
-        return (float) bcdiv($value, 100, 2);
+        return (float) bcdiv($value, 100, $this->scale);
     }
 
     /**
