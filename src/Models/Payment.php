@@ -35,6 +35,14 @@ class Payment extends Model
     }
 
     /**
+     * 对应的支付者.
+     */
+    public function payer(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
+    /**
      * 关联的退款单.
      */
     public function refunds(): HasMany

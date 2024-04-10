@@ -29,7 +29,8 @@ return new class extends Migration
             $table->string('job')->comment('回调任务');
             $table->json('attach')->nullable()->comment('附加信息');
             $table->unsignedBigInteger('payment_id')->nullable()->comment('退款时关联支付单ID');
-            // $table->morphs('merchant');
+            $table->morphs('merchant');
+            $table->morphs('payer');
             $table->timestamps();
         });
     }
