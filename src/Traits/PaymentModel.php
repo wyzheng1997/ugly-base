@@ -69,14 +69,15 @@ trait PaymentModel
      * @param  Carbon|string|null  $expire_at 过期时间.
      * @param  string|null  $order_no 内部订单号.
      * @param  array  $attach 附加信息.
+     * @param  Model|Builder|null  $payer 支付者.
      * @param  Model|Builder|null  $merchant 商户.
      */
-    public static function pay(string $channel, float $amount, string $job, string $order_no = null, array $attach = [], Carbon|string $expire_at = null, Model|Builder $merchant = null): Model|Builder
+    public static function pay(string $channel, float $amount, string $job, string $order_no = null, array $attach = [], Carbon|string $expire_at = null, Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
     {
         $data = compact('channel', 'amount', 'job', 'expire_at', 'order_no', 'attach');
         $data['type'] = PaymentType::Pay;
 
-        return self::defaultCreate($data, $merchant);
+        return self::defaultCreate($data, $payer, $merchant);
     }
 
     /**
@@ -85,11 +86,12 @@ trait PaymentModel
      * @param  float  $amount 退款金额/元.
      * @param  string  $job 退款后需要执行的任务.
      * @param  array  $attach 附加信息.
+     * @param  Model|Builder|null  $payer 商户.
      * @param  Model|Builder|null  $merchant 商户.
      *
      * @throws ApiCustomError
      */
-    public function refund(float $amount, string $job = '', array $attach = [], Model|Builder $merchant = null): Model|Builder
+    public function refund(float $amount, string $job = '', array $attach = [], Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
     {
         if (
             $this->getAttribute('status') !== PaymentStatus::Success ||
@@ -104,7 +106,7 @@ trait PaymentModel
         $data['payment_id'] = $this->getKey();
         $data['order_no'] = $this->getAttribute('order_no');
 
-        return self::defaultCreate($data, $merchant);
+        return self::defaultCreate($data, $payer, $merchant);
     }
 
     /**
@@ -114,14 +116,15 @@ trait PaymentModel
      * @param  float  $amount 金额/元.
      * @param  string|null  $job 成功后需要执行的任务.
      * @param  array  $attach 附加信息.
+     * @param  Model|Builder|null  $payer 收款人.
      * @param  Model|Builder|null  $merchant 商户.
      */
-    public static function transfer(string $channel, float $amount, string $job = null, array $attach = [], Model|Builder $merchant = null): Model|Builder
+    public static function transfer(string $channel, float $amount, string $job = null, array $attach = [], Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
     {
         $data = compact('channel', 'amount', 'job', 'attach');
         $data['type'] = PaymentType::Transfer;
 
-        return self::defaultCreate($data, $merchant);
+        return self::defaultCreate($data, $payer, $merchant);
     }
 
     /**
