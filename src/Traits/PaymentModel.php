@@ -144,7 +144,7 @@ trait PaymentModel
         $channel = self::getChannelClass($this->getAttribute('channel'));
         $method = strtolower($this->getAttribute('type')->name);
 
-        return App::call([$channel, $method], ['payment' => $this, 'data' => $data]);
+        return App::call([new $channel, $method], ['payment' => $this, 'data' => $data]);
     }
 
     /**

@@ -8,22 +8,22 @@ use Ugly\Base\Models\Payment;
 
 class PaymentTestChannel
 {
-    public static function pay($payment, array $data = [])
+    public function pay($payment, array $data = [])
     {
         return 'pay';
     }
 
-    public static function refund($payment, array $data = [])
+    public function refund($payment, array $data = [])
     {
         return 'refund';
     }
 
-    public static function transfer($payment, array $data = [])
+    public function transfer($payment, array $data = [])
     {
         return 'transfer';
     }
 
-    public static function notify(Request $request)
+    public function notify(Request $request)
     {
         return [];
     }
