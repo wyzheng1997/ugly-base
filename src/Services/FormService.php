@@ -244,7 +244,7 @@ class FormService
 
         // 执行策略检查
         if ($policyFn = $this->checkFormCallback(FormCallback::Policy)) {
-            $result = call_user_func($policyFn, $this, $this->model);
+            $result = call_user_func($policyFn, $this);
             if ($result === false || is_string($result)) {
                 throw new ApiCustomError(is_string($result) ? $result : '非法操作！');
             }
@@ -257,7 +257,7 @@ class FormService
 
         // 保存前钩子.
         if ($savingFn = $this->checkFormCallback(FormCallback::Saving)) {
-            call_user_func($savingFn, $this, $this->model);
+            call_user_func($savingFn, $this);
         }
 
         // 填充数据.
@@ -330,7 +330,7 @@ class FormService
         $this->model = $this->model->findOrFail($this->key);
         // 执行策略检查
         if ($policyFn = $this->checkFormCallback(FormCallback::Policy)) {
-            $result = call_user_func($policyFn, $this, $this->model);
+            $result = call_user_func($policyFn, $this);
             if ($result === false || is_string($result)) {
                 throw new ApiCustomError(is_string($result) ? $result : '非法操作！');
             }
