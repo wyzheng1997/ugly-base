@@ -5,6 +5,8 @@ namespace Ugly\Base\Traits;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\DB;
 use Ugly\Base\Enums\PaymentStatus;
 use Ugly\Base\Enums\PaymentType;
 use Ugly\Base\Exceptions\ApiCustomError;
@@ -48,7 +50,8 @@ trait PaymentModel
      * @param  Model|Builder|null  $payer 支付者.
      * @param  Model|Builder|null  $merchant 商户.
      */
-    private static function defaultCreate(array $data, Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
+    private static function defaultCreate(array $data, Model|Builder $payer = null,
+        Model|Builder $merchant = null): Model|Builder
     {
         return self::query()->create(array_merge([
             'no' => self::generateNo(),
@@ -72,7 +75,9 @@ trait PaymentModel
      * @param  Model|Builder|null  $payer 支付者.
      * @param  Model|Builder|null  $merchant 商户.
      */
-    public static function pay(string $channel, float $amount, string $job, string $order_no = null, array $attach = [], Carbon|string $expire_at = null, Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
+    public static function pay(string $channel, float $amount, string $job, string $order_no = null,
+        array $attach = [], Carbon|string $expire_at = null,
+        Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
     {
         $data = compact('channel', 'amount', 'job', 'expire_at', 'order_no', 'attach');
         $data['type'] = PaymentType::Pay;
@@ -91,7 +96,8 @@ trait PaymentModel
      *
      * @throws ApiCustomError
      */
-    public function refund(float $amount, string $job = '', array $attach = [], Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
+    public function refund(float $amount, string $job = '', array $attach = [],
+        Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
     {
         if (
             $this->getAttribute('status') !== PaymentStatus::Success ||
@@ -119,7 +125,8 @@ trait PaymentModel
      * @param  Model|Builder|null  $payer 收款人.
      * @param  Model|Builder|null  $merchant 商户.
      */
-    public static function transfer(string $channel, float $amount, string $job = null, array $attach = [], Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
+    public static function transfer(string $channel, float $amount, string $job = null, array $attach = [],
+        Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
     {
         $data = compact('channel', 'amount', 'job', 'attach');
         $data['type'] = PaymentType::Transfer;
@@ -137,7 +144,7 @@ trait PaymentModel
         $channel = self::getChannelClass($this->getAttribute('channel'));
         $method = strtolower($this->getAttribute('type')->name);
 
-        return call_user_func([$channel, $method], $this, $data);
+        return App::call([$channel, $method], ['payment' => $this, 'data' => $data]);
     }
 
     /**
@@ -145,15 +152,27 @@ trait PaymentModel
      *
      * @param  Carbon|string|null  $time 支付成功时间.
      */
-    public function success(Carbon|string $time = null): void
+    public static function success(string $no, array $data = []): void
     {
-        $this->setAttribute('success_at', $time ?: now());
-        $this->setAttribute('status', PaymentStatus::Success);
-        $this->save();
-        $job = $this->getAttribute('job');
-        if ($job && class_exists($job) && method_exists($job, 'dispatch')) {
-            call_user_func([$job, 'dispatch'], $this);
-        }
+        DB::transaction(function () use ($no, $data) {
+            $payment = self::query()
+                ->lockForUpdate()
+                ->where('no', $no)
+                ->where('status', PaymentStatus::Processing)
+                ->first();
+            if ($payment) {
+                $payment->fill(array_merge([
+                    'success_at' => now(),
+                    'status' => PaymentStatus::Success,
+                ], $data))->save();
+
+                // 成功后需要执行的任务.
+                $job = $payment->job;
+                if ($job && class_exists($job) && method_exists($job, 'dispatchSync')) {
+                    App::call([$job, 'dispatchSync'], ['payment' => $payment]);
+                }
+            }
+        });
     }
 
     /**
