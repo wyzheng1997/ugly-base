@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Ugly\Base\Enums\PaymentStatus;
 use Ugly\Base\Enums\PaymentType;
+use Ugly\Base\Events\PaymentFailed;
 use Ugly\Base\Exceptions\ApiCustomError;
 
 /**
@@ -79,6 +80,7 @@ trait PaymentModel
         array $attach = [], Carbon|string $expire_at = null,
         Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
     {
+        $expire_at = $expire_at ?: config('ugly.payment.expire');
         $data = compact('channel', 'amount', 'job', 'expire_at', 'order_no', 'attach');
         $data['type'] = PaymentType::Pay;
 
@@ -182,11 +184,14 @@ trait PaymentModel
      * @param  string|null  $remark 失败原因.
      * @param  Carbon|string|null  $time 支付失败时间.
      */
-    public function fail(string $remark = null, Carbon|string $time = null): void
+    public function fail(string $eventType, string $remark = null, Carbon|string $time = null): void
     {
         $this->setAttribute('fail_at', $time ?: now());
         $this->setAttribute('status', PaymentStatus::Fail);
         $this->setAttribute('remark', $remark);
         $this->save();
+
+        // 触发失败事件.
+        PaymentFailed::dispatch($this, $eventType);
     }
 }

@@ -15,5 +15,6 @@ return [
     // 支付设置
     'payment' => [
         'enable' => true,
+        'expire' => 30, // 默认支付过期时间单位分钟
     ],
 ];

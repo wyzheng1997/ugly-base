@@ -21,13 +21,14 @@ class Config extends Fluent
      */
     private function getCacheData(): array
     {
+        $driver = config('ugly.config.cache_driver');
         if (config('ugly.config.cache_driver')) {
             $cache_ttl = config('ugly.config.cache_ttl');
             $cache_key = config('ugly.config.cache_key');
             if ($cache_ttl) { // 缓存
-                return Cache::remember($cache_key, $cache_ttl, fn () => $this->getRawData());
+                return Cache::driver($driver)->remember($cache_key, $cache_ttl, fn () => $this->getRawData());
             } else { // 0 永久缓存
-                return Cache::rememberForever($cache_key, fn () => $this->getRawData());
+                return Cache::driver($driver)->rememberForever($cache_key, fn () => $this->getRawData());
             }
         }
 
@@ -39,8 +40,9 @@ class Config extends Fluent
      */
     private function clearCache(): void
     {
-        if (config('ugly.config.cache_driver')) {
-            Cache::forget(config('ugly.config.cache_key'));
+        $driver = config('ugly.config.cache_driver');
+        if ($driver) {
+            Cache::driver($driver)->forget(config('ugly.config.cache_key'));
         }
     }
 
