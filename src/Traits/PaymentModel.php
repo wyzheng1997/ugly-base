@@ -150,7 +150,8 @@ trait PaymentModel
     /**
      * 支付成功.
      *
-     * @param  Carbon|string|null  $time 支付成功时间.
+     * @param  string  $no 支付单号.
+     * @param  array  $data 其他入库数据.
      */
     public static function success(string $no, array $data = []): void
     {
