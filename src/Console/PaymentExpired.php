@@ -19,7 +19,7 @@ class PaymentExpired extends Command
             Payment::query()
                 ->lockForUpdate()
                 ->where('status', PaymentStatus::Processing)
-                ->where('expire_at', '<', now())
+                ->where('expired_at', '<', now())
                 ->chunkById(100, function ($payments) {
                     foreach ($payments as $payment) {
                         $payment->fail('TIMEOUT', '付款超时');

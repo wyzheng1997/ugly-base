@@ -22,7 +22,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('status')->index()->comment('状态: 1处理中 2成功 3失败');
             $table->timestamp('success_at')->nullable()->comment('成功时间');
             $table->timestamp('fail_at')->nullable()->comment('失败时间');
-            $table->timestamp('expire_at')->nullable()->comment('过期时间');
+            $table->timestamp('expired_at')->nullable()->comment('过期时间');
             $table->string('remark')->nullable()->comment('备注');
             $table->string('notification_no')->nullable()->comment('第三方支付通知单号');
             $table->json('notification_data')->nullable()->comment('第三方支付通知原始数据');

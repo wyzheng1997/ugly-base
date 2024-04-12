@@ -70,18 +70,18 @@ trait PaymentModel
      * @param  string  $channel 支付通道.
      * @param  float  $amount 支付金额/元.
      * @param  string  $job 成功后需要执行的任务.
-     * @param  Carbon|string|null  $expire_at 过期时间.
+     * @param  Carbon|string|null  $expired_at 过期时间.
      * @param  string|null  $order_no 内部订单号.
      * @param  array  $attach 附加信息.
      * @param  Model|Builder|null  $payer 支付者.
      * @param  Model|Builder|null  $merchant 商户.
      */
     public static function pay(string $channel, float $amount, string $job, string $order_no = null,
-        array $attach = [], Carbon|string $expire_at = null,
+        array $attach = [], Carbon|string $expired_at = null,
         Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
     {
-        $expire_at = $expire_at ?: now()->addMinutes((int) config('ugly.payment.expire'));
-        $data = compact('channel', 'amount', 'job', 'expire_at', 'order_no', 'attach');
+        $expired_at = $expired_at ?: now()->addMinutes((int) config('ugly.payment.expire'));
+        $data = compact('channel', 'amount', 'job', 'expired_at', 'order_no', 'attach');
         $data['type'] = PaymentType::Pay;
 
         return self::defaultCreate($data, $payer, $merchant);

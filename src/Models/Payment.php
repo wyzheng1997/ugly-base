@@ -9,10 +9,12 @@ use Ugly\Base\Casts\Amount;
 use Ugly\Base\Enums\PaymentStatus;
 use Ugly\Base\Enums\PaymentType;
 use Ugly\Base\Traits\PaymentModel;
+use Ugly\Base\Traits\SearchModel;
+use Ugly\Base\Traits\SerializeDate;
 
 class Payment extends Model
 {
-    use PaymentModel;
+    use SerializeDate, SearchModel, PaymentModel;
 
     protected $table = 'payments';
 

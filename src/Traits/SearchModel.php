@@ -13,14 +13,6 @@ use Illuminate\Database\Eloquent\Model;
 trait SearchModel
 {
     /**
-     * 序列化日期格式.
-     */
-    protected function serializeDate($date): mixed
-    {
-        return $date->format('Y-m-d H:i:s');
-    }
-
-    /**
      * 搜索.
      *
      * @param  array  $search 搜索条件
