@@ -4,7 +4,7 @@ namespace Ugly\Base;
 
 use Illuminate\Support\ServiceProvider;
 use Ugly\Base\Console\InitCommand;
-use Ugly\Base\Events\PaymentFailed;
+use Ugly\Base\Console\PaymentExpired;
 use Ugly\Base\Support\Config;
 
 class UglyBaseServiceProvider extends ServiceProvider
@@ -15,7 +15,7 @@ class UglyBaseServiceProvider extends ServiceProvider
         $this->app->singleton('ugly.config', Config::class);
 
         if (config('ugly.payment.enable')) {
-            $this->commands([PaymentFailed::class]);
+            $this->commands([PaymentExpired::class]);
         }
 
         if ($this->app->runningInConsole()) {

@@ -54,13 +54,21 @@ trait ApiResource
      * @param  int  $code 失败码
      * @param  int  $httpCode http状态码
      */
-    final public function failed(string $msg = '操作失败', int $code = 400, int $httpCode = Response::HTTP_BAD_REQUEST): JsonResponse
+    final public function failed(string $msg = '操作失败', int $code = 400, int $httpCode = null): JsonResponse
     {
+        if (is_null($httpCode)) {
+            // 默认使用code作为http状态码
+            $httpCode = $code;
+            if ($httpCode < 100 || $httpCode >= 600) {
+                // http不合法时，默认使用400
+                $httpCode = Response::HTTP_BAD_REQUEST;
+            }
+        }
 
         return response()->json([
             'code' => $code,
             'message' => $msg,
-        ], $httpCode);
+        ], is_null($httpCode) ? $code : $httpCode);
     }
 
     /**

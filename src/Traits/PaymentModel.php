@@ -80,7 +80,7 @@ trait PaymentModel
         array $attach = [], Carbon|string $expire_at = null,
         Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
     {
-        $expire_at = $expire_at ?: config('ugly.payment.expire');
+        $expire_at = $expire_at ?: now()->addMinutes((int) config('ugly.payment.expire'));
         $data = compact('channel', 'amount', 'job', 'expire_at', 'order_no', 'attach');
         $data['type'] = PaymentType::Pay;
 
