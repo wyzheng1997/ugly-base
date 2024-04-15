@@ -8,6 +8,7 @@ use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\ValidationException;
 use Ugly\Base\Enums\FormCallback;
 use Ugly\Base\Enums\FormScene;
+use Ugly\Base\Exceptions\ApiCustomError;
 
 class FormService
 {
@@ -243,7 +244,10 @@ class FormService
 
         // 执行策略检查
         if ($policyFn = $this->checkFormCallback(FormCallback::Policy)) {
-            call_user_func($policyFn, $this);
+            $result = call_user_func($policyFn, $this);
+            if ($result === false || is_string($result)) {
+                throw new ApiCustomError($result ?: '非法操作！');
+            }
         }
 
         // 处理输入的值
@@ -326,7 +330,10 @@ class FormService
         $this->model = $this->model->findOrFail($this->key);
         // 执行策略检查
         if ($policyFn = $this->checkFormCallback(FormCallback::Policy)) {
-            call_user_func($policyFn, $this);
+            $result = call_user_func($policyFn, $this);
+            if ($result === false || is_string($result)) {
+                throw new ApiCustomError($result ?: '非法操作！');
+            }
         }
         // 删除前
         if ($deletingFn = $this->checkFormCallback(FormCallback::Deleting)) {
