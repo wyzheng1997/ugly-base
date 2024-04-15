@@ -7,7 +7,6 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 use Ugly\Base\Enums\FormScene;
-use Ugly\Base\Exceptions\ApiCustomError;
 use Ugly\Base\Services\FormService;
 use Ugly\Base\Traits\ApiResource;
 
@@ -30,18 +29,7 @@ abstract class FormController extends Controller
      */
     public function store(): JsonResponse
     {
-        try {
-            DB::beginTransaction();
-            $model = $this->form()->setScene(FormScene::Create)->save();
-            DB::commit();
-        } catch (ApiCustomError $e) {
-            DB::rollBack();
-
-            return $this->failed($e->getMessage());
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            throw $e;
-        }
+        $model = DB::transaction(fn () => $this->form()->setScene(FormScene::Create)->save());
 
         return $this->success([
             $model->getKeyName() => $model->getKey(),
@@ -55,20 +43,9 @@ abstract class FormController extends Controller
      */
     public function update($id): JsonResponse
     {
-        try {
-            DB::beginTransaction();
-            $this->form()->setKey($id)->setScene(FormScene::Edit)->save();
-            DB::commit();
+        DB::transaction(fn () => $this->form()->setKey($id)->setScene(FormScene::Edit)->save());
 
-            return $this->success(Response::HTTP_OK);
-        } catch (ApiCustomError $e) {
-            DB::rollBack();
-
-            return $this->failed($e->getMessage());
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            throw $e;
-        }
+        return $this->success();
     }
 
     /**
@@ -78,19 +55,8 @@ abstract class FormController extends Controller
      */
     public function destroy($id): JsonResponse
     {
-        DB::beginTransaction();
-        try {
-            $this->form()->setScene(FormScene::Delete)->setKey($id)->delete();
-            DB::commit();
+        DB::transaction(fn () => $this->form()->setKey($id)->setScene(FormScene::Delete)->save());
 
-            return $this->success();
-        } catch (ApiCustomError $exception) {
-            DB::rollBack();
-
-            return $this->failed($exception->getMessage());
-        } catch (\Throwable $exception) {
-            DB::rollBack();
-            throw $exception;
-        }
+        return $this->success();
     }
 }

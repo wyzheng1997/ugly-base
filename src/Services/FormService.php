@@ -8,7 +8,6 @@ use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\ValidationException;
 use Ugly\Base\Enums\FormCallback;
 use Ugly\Base\Enums\FormScene;
-use Ugly\Base\Exceptions\ApiCustomError;
 
 class FormService
 {
@@ -244,10 +243,7 @@ class FormService
 
         // 执行策略检查
         if ($policyFn = $this->checkFormCallback(FormCallback::Policy)) {
-            $result = call_user_func($policyFn, $this);
-            if ($result === false || is_string($result)) {
-                throw new ApiCustomError(is_string($result) ? $result : '非法操作！');
-            }
+            call_user_func($policyFn, $this);
         }
 
         // 处理输入的值
@@ -330,10 +326,7 @@ class FormService
         $this->model = $this->model->findOrFail($this->key);
         // 执行策略检查
         if ($policyFn = $this->checkFormCallback(FormCallback::Policy)) {
-            $result = call_user_func($policyFn, $this);
-            if ($result === false || is_string($result)) {
-                throw new ApiCustomError(is_string($result) ? $result : '非法操作！');
-            }
+            call_user_func($policyFn, $this);
         }
         // 删除前
         if ($deletingFn = $this->checkFormCallback(FormCallback::Deleting)) {
@@ -421,7 +414,7 @@ class FormService
 
         // 检查是否允许行内编辑
         if (! in_array($field, array_keys($this->allowInlineEditFields))) {
-            throw new ApiCustomError($field.'不允许修改！');
+            ValidationException::withMessages([$field => '不允许修改！']);
         }
 
         // 合并到请求中

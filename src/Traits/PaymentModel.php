@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\DB;
 use Ugly\Base\Enums\PaymentStatus;
 use Ugly\Base\Enums\PaymentType;
 use Ugly\Base\Events\PaymentFailed;
-use Ugly\Base\Exceptions\ApiCustomError;
 
 /**
  *  统一支付.
@@ -34,14 +33,14 @@ trait PaymentModel
      *
      * @param  string  $channel 支付通道
      *
-     * @throws ApiCustomError
+     * @throws \Exception
      */
     private static function getChannelClass(string $channel): string
     {
         if (class_exists($channel)) {
             return $channel;
         } else {
-            throw new ApiCustomError('支付通道不存在:'.$channel);
+            throw new \Exception('支付通道不存在:'.$channel);
         }
     }
 
@@ -96,7 +95,7 @@ trait PaymentModel
      * @param  Model|Builder|null  $payer 商户.
      * @param  Model|Builder|null  $merchant 商户.
      *
-     * @throws ApiCustomError
+     * @throws \Exception
      */
     public function refund(float $amount, string $job = '', array $attach = [],
         Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
@@ -105,7 +104,7 @@ trait PaymentModel
             $this->getAttribute('status') !== PaymentStatus::Success ||
             $this->getAttribute('type') !== PaymentType::Pay
         ) {
-            throw new ApiCustomError('支付单状态不正确！');
+            throw new \Exception('支付单状态不正确！');
         }
 
         $data = compact('amount', 'job', 'attach');
@@ -139,7 +138,7 @@ trait PaymentModel
     /**
      * 发送请求，获取第三方接口响应数据.
      *
-     * @throws ApiCustomError
+     * @throws \Exception
      */
     public function send(array $data = []): mixed
     {

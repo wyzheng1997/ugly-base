@@ -8,7 +8,6 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 use Ugly\Base\Contracts\SimpleForm;
-use Ugly\Base\Exceptions\ApiCustomError;
 use Ugly\Base\Traits\ApiResource;
 
 /**
@@ -48,22 +47,14 @@ class SimpleFormController extends Controller
     public function saveForm(Request $request, $type)
     {
         if (isset($this->form[$type]) && isset(class_implements($this->form[$type])[SimpleForm::class])) {
-            $form = new $this->form[$type];
-            // 表单验证
-            try {
-                DB::beginTransaction();
-                $form->handle($form->policy($request));
-                DB::commit();
+            return $this->success(
+                DB::transaction(function () use ($request, $type) {
+                    $form = new $this->form[$type];
+                    $form->handle($form->policy($request));
 
-                return $this->success($form->default());
-            } catch (ApiCustomError $e) {
-                DB::rollBack();
-
-                return $this->failed($e->getMessage());
-            } catch (\Throwable $e) {
-                DB::rollBack();
-                throw $e;
-            }
+                    return $form->default();
+                })
+            );
         }
         abort(Response::HTTP_NOT_FOUND);
     }
