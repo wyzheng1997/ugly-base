@@ -57,10 +57,10 @@ trait PaymentModel
         return self::query()->create(array_merge([
             'no' => self::generateNo(),
             'status' => PaymentStatus::Processing,
-            'merchant_id' => $merchant?->getKey() ?: 0,
-            'merchant_type' => $merchant?->getMorphClass() ?: '',
-            'payer_id' => $payer?->getKey() ?: 0,
-            'payer_type' => $payer?->getMorphClass() ?: '',
+            'merchant_id' => $merchant?->getKey(),
+            'merchant_type' => $merchant?->getMorphClass(),
+            'payer_id' => $payer?->getKey(),
+            'payer_type' => $payer?->getMorphClass(),
         ], $data));
     }
 
