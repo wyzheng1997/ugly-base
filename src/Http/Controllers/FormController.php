@@ -55,7 +55,7 @@ abstract class FormController extends Controller
      */
     public function destroy($id): JsonResponse
     {
-        DB::transaction(fn () => $this->form()->setKey($id)->setScene(FormScene::Delete)->save());
+        DB::transaction(fn () => $this->form()->setKey($id)->setScene(FormScene::Delete)->delete());
 
         return $this->success();
     }
