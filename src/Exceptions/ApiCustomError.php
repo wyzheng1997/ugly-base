@@ -9,7 +9,7 @@ class ApiCustomError extends \Exception
 {
     use ApiResource;
 
-    protected int $httpCode;
+    protected int|null $httpCode;
 
     public function __construct(string $msg = '操作失败', int $code = 400, int $httpCode = null)
     {
