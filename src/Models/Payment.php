@@ -14,7 +14,7 @@ use Ugly\Base\Traits\SerializeDate;
 
 class Payment extends Model
 {
-    use SerializeDate, SearchModel, PaymentModel;
+    use PaymentModel, SearchModel, SerializeDate;
 
     protected $table = 'payments';
 

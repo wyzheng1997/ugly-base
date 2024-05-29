@@ -7,6 +7,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 use Ugly\Base\Enums\FormScene;
+use Ugly\Base\Exceptions\ApiCustomError;
 use Ugly\Base\Services\FormService;
 use Ugly\Base\Traits\ApiResource;
 
@@ -43,7 +44,14 @@ abstract class FormController extends Controller
      */
     public function update($id): JsonResponse
     {
-        DB::transaction(fn () => $this->form()->setKey($id)->setScene(FormScene::Edit)->save());
+        DB::transaction(function () use ($id) {
+            $form = $this->form();
+            $ids = explode(',', $id);
+            throw_if(count($ids) > 100, new ApiCustomError('批量编辑不能超过100条！'));
+            foreach ($ids as $key) {
+                $form->setKey($key)->setScene(FormScene::Edit)->save();
+            }
+        });
 
         return $this->success();
     }
@@ -55,7 +63,14 @@ abstract class FormController extends Controller
      */
     public function destroy($id): JsonResponse
     {
-        DB::transaction(fn () => $this->form()->setKey($id)->setScene(FormScene::Delete)->delete());
+        DB::transaction(function () use ($id) {
+            $form = $this->form();
+            $ids = explode(',', $id);
+            throw_if(count($ids) > 100, new ApiCustomError('批量删除不能超过100条！'));
+            foreach ($ids as $key) {
+                $form->setKey($key)->setScene(FormScene::Delete)->delete();
+            }
+        });
 
         return $this->success();
     }

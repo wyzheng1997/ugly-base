@@ -31,7 +31,7 @@ trait PaymentModel
     /**
      * 获取支付通道类.
      *
-     * @param  string  $channel 支付通道
+     * @param  string  $channel  支付通道
      *
      * @throws \Exception
      */
@@ -47,11 +47,11 @@ trait PaymentModel
     /**
      * 默认创建.
      *
-     * @param  Model|Builder|null  $payer 支付者.
-     * @param  Model|Builder|null  $merchant 商户.
+     * @param  Model|Builder|null  $payer  支付者.
+     * @param  Model|Builder|null  $merchant  商户.
      */
-    private static function defaultCreate(array $data, Model|Builder $payer = null,
-        Model|Builder $merchant = null): Model|Builder
+    private static function defaultCreate(array $data, Model|Builder|null $payer = null,
+        Model|Builder|null $merchant = null): Model|Builder
     {
         return self::query()->create(array_merge([
             'no' => self::generateNo(),
@@ -66,18 +66,18 @@ trait PaymentModel
     /**
      * 创建付款.
      *
-     * @param  string  $channel 支付通道.
-     * @param  float  $amount 支付金额/元.
-     * @param  string  $job 成功后需要执行的任务.
-     * @param  Carbon|string|null  $expired_at 过期时间.
-     * @param  string|null  $order_no 内部订单号.
-     * @param  array  $attach 附加信息.
-     * @param  Model|Builder|null  $payer 支付者.
-     * @param  Model|Builder|null  $merchant 商户.
+     * @param  string  $channel  支付通道.
+     * @param  float  $amount  支付金额/元.
+     * @param  string  $job  成功后需要执行的任务.
+     * @param  Carbon|string|null  $expired_at  过期时间.
+     * @param  string|null  $order_no  内部订单号.
+     * @param  array  $attach  附加信息.
+     * @param  Model|Builder|null  $payer  支付者.
+     * @param  Model|Builder|null  $merchant  商户.
      */
-    public static function pay(string $channel, float $amount, string $job, string $order_no = null,
-        array $attach = [], Carbon|string $expired_at = null,
-        Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
+    public static function pay(string $channel, float $amount, string $job, ?string $order_no = null,
+        array $attach = [], Carbon|string|null $expired_at = null,
+        Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
     {
         $expired_at = $expired_at ?: now()->addMinutes((int) config('ugly.payment.expire'));
         $data = compact('channel', 'amount', 'job', 'expired_at', 'order_no', 'attach');
@@ -89,16 +89,16 @@ trait PaymentModel
     /**
      * 支付单退款.
      *
-     * @param  float  $amount 退款金额/元.
-     * @param  string  $job 退款后需要执行的任务.
-     * @param  array  $attach 附加信息.
-     * @param  Model|Builder|null  $payer 商户.
-     * @param  Model|Builder|null  $merchant 商户.
+     * @param  float  $amount  退款金额/元.
+     * @param  string  $job  退款后需要执行的任务.
+     * @param  array  $attach  附加信息.
+     * @param  Model|Builder|null  $payer  商户.
+     * @param  Model|Builder|null  $merchant  商户.
      *
      * @throws \Exception
      */
     public function refund(float $amount, string $job = '', array $attach = [],
-        Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
+        Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
     {
         if (
             $this->getAttribute('status') !== PaymentStatus::Success ||
@@ -119,15 +119,15 @@ trait PaymentModel
     /**
      * 创建转账单.
      *
-     * @param  string  $channel 支付通道.
-     * @param  float  $amount 金额/元.
-     * @param  string|null  $job 成功后需要执行的任务.
-     * @param  array  $attach 附加信息.
-     * @param  Model|Builder|null  $payer 收款人.
-     * @param  Model|Builder|null  $merchant 商户.
+     * @param  string  $channel  支付通道.
+     * @param  float  $amount  金额/元.
+     * @param  string|null  $job  成功后需要执行的任务.
+     * @param  array  $attach  附加信息.
+     * @param  Model|Builder|null  $payer  收款人.
+     * @param  Model|Builder|null  $merchant  商户.
      */
-    public static function transfer(string $channel, float $amount, string $job = null, array $attach = [],
-        Model|Builder $payer = null, Model|Builder $merchant = null): Model|Builder
+    public static function transfer(string $channel, float $amount, ?string $job = null, array $attach = [],
+        Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
     {
         $data = compact('channel', 'amount', 'job', 'attach');
         $data['type'] = PaymentType::Transfer;
@@ -151,8 +151,8 @@ trait PaymentModel
     /**
      * 支付成功.
      *
-     * @param  string  $no 支付单号.
-     * @param  array  $data 其他入库数据.
+     * @param  string  $no  支付单号.
+     * @param  array  $data  其他入库数据.
      */
     public static function success(string $no, array $data = []): void
     {
@@ -180,10 +180,10 @@ trait PaymentModel
     /**
      * 支付失败.
      *
-     * @param  string|null  $remark 失败原因.
-     * @param  Carbon|string|null  $time 支付失败时间.
+     * @param  string|null  $remark  失败原因.
+     * @param  Carbon|string|null  $time  支付失败时间.
      */
-    public function fail(string $eventType, string $remark = null, Carbon|string $time = null): void
+    public function fail(string $eventType, ?string $remark = null, Carbon|string|null $time = null): void
     {
         $this->setAttribute('fail_at', $time ?: now());
         $this->setAttribute('status', PaymentStatus::Fail);

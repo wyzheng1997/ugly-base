@@ -9,9 +9,9 @@ class ApiCustomError extends \Exception
 {
     use ApiResource;
 
-    protected int|null $httpCode;
+    protected ?int $httpCode;
 
-    public function __construct(string $msg = '操作失败', int $code = 400, int $httpCode = null)
+    public function __construct(string $msg = '操作失败', int $code = 400, ?int $httpCode = null)
     {
         parent::__construct();
         $this->message = $msg;

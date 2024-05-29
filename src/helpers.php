@@ -4,7 +4,7 @@ if (! function_exists('arr2tree')) {
     /**
      * 数组/集合 转换成树级结构.
      */
-    function arr2tree(array $list, Closure $transform = null, string $id = 'id', string $pid = 'pid', string $children = 'children'): array
+    function arr2tree(array $list, ?Closure $transform = null, string $id = 'id', string $pid = 'pid', string $children = 'children'): array
     {
         [$map, $tree] = [[], []];
         foreach ($list as $item) {
@@ -28,7 +28,7 @@ if (! function_exists('sys_config')) {
     /**
      * 系统配置辅助函数.
      */
-    function sys_config(array|string $key = null, mixed $default = null)
+    function sys_config(array|string|null $key = null, mixed $default = null)
     {
         /**
          * @var \Ugly\Base\Support\Config $config

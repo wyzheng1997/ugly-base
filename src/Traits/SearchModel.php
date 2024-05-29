@@ -15,11 +15,11 @@ trait SearchModel
     /**
      * 搜索.
      *
-     * @param  array  $search 搜索条件
-     *                      1、['name' => 'like'] PS: name like '%xxx%'
-     *                      2、['category_id' => ['=', 'cate_id']]   PS: category_id = request('cate_id')
-     *                      3、['type' => fn($query, $input) => $query->where('type', $input)] PS: 自定义查询
-     *                      5、['admin.name' => 'like'] PS: whereHas('admin', fn($q) => $->where('name', 'like', '%xxx%')) PS: 关联查询
+     * @param  array  $search  搜索条件
+     *                         1、['name' => 'like'] PS: name like '%xxx%'
+     *                         2、['category_id' => ['=', 'cate_id']]   PS: category_id = request('cate_id')
+     *                         3、['type' => fn($query, $input) => $query->where('type', $input)] PS: 自定义查询
+     *                         5、['admin.name' => 'like'] PS: whereHas('admin', fn($q) => $->where('name', 'like', '%xxx%')) PS: 关联查询
      */
     final public static function search(array $search = [], array|string $relations = []): Builder
     {

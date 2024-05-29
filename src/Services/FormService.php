@@ -184,7 +184,7 @@ class FormService
     /**
      * 表单唯一验证.
      */
-    public function unique(string $table = null, $column = 'NULL'): Unique
+    public function unique(?string $table = null, $column = 'NULL'): Unique
     {
         $rule = Rule::unique($table ?: get_class($this->getModel()), $column);
         if ($this->isEdit()) {
@@ -285,7 +285,7 @@ class FormService
     /**
      * 保存前回调函数.
      */
-    public function saving(\Closure $callback = null): static
+    public function saving(?\Closure $callback = null): static
     {
         $this->formCallback[FormCallback::Saving->value] = $callback;
 
@@ -295,7 +295,7 @@ class FormService
     /**
      * 保存后回调函数.
      */
-    public function saved(\Closure $callback = null): static
+    public function saved(?\Closure $callback = null): static
     {
         $this->formCallback[FormCallback::Saved->value] = $callback;
 
@@ -305,7 +305,7 @@ class FormService
     /**
      * 删除前回调.
      */
-    public function deleting(\Closure $callback = null): static
+    public function deleting(?\Closure $callback = null): static
     {
         $this->formCallback[FormCallback::Deleting->value] = $callback;
 
@@ -315,7 +315,7 @@ class FormService
     /**
      * 删除后回调.
      */
-    public function deleted(\Closure $callback = null): static
+    public function deleted(?\Closure $callback = null): static
     {
         $this->formCallback[FormCallback::Deleted->value] = $callback;
 
