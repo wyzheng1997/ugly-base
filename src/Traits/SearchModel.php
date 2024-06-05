@@ -21,9 +21,10 @@ trait SearchModel
      *                         3、['type' => fn($query, $input) => $query->where('type', $input)] PS: 自定义查询
      *                         5、['admin.name' => 'like'] PS: whereHas('admin', fn($q) => $->where('name', 'like', '%xxx%')) PS: 关联查询
      */
-    final public static function search(array $search = [], array|string $relations = []): Builder
+    final public static function search(array $search = [], array|string $relations = [], array $sortField = []): Builder
     {
-        return self::with($relations)->where(function ($query) use ($search) {
+        // 解析搜索条件
+        $query = self::with($relations)->where(function ($query) use ($search) {
             // 获取请求参数
             foreach ($search as $field => $operator) {
                 $fieldInfo = pathinfo($field);
@@ -77,5 +78,24 @@ trait SearchModel
                 }
             }
         });
+
+        // 解析排序规则
+        $sort_by = (string) request('sort_by');
+        if ($sort_by) {
+            //-last_modified,+email
+            $sort_by = explode(',', $sort_by);
+            foreach ($sort_by as $sort) {
+                $sort = trim($sort);
+                $field = substr($sort, 1);
+                $order = str_starts_with($sort, '-') ? 'desc' : 'asc';
+                if (in_array($field, $sortField)) {
+                    $query->orderBy($field, $order);
+                } elseif (data_get($sortField, $field) instanceof \Closure) {
+                    call_user_func($sortField[$field], $query, $order);
+                }
+            }
+        }
+
+        return $query;
     }
 }
