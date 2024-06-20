@@ -9,14 +9,14 @@ use Symfony\Component\HttpFoundation\Response;
 use Ugly\Base\Enums\FormScene;
 use Ugly\Base\Exceptions\ApiCustomError;
 use Ugly\Base\Services\FormService;
-use Ugly\Base\Traits\ApiResource;
+use Ugly\Base\Traits\ApiResponse;
 
 /**
  * 快速表单.
  */
 abstract class FormController extends Controller
 {
-    use ApiResource;
+    use ApiResponse;
 
     /**
      * 抽象表单配置类

@@ -2,14 +2,14 @@
 
 namespace Ugly\Base\Traits;
 
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\Database\Eloquent\Builder as BuilderContract;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * 统一http响应.
  */
-trait ApiResource
+trait ApiResponse
 {
     /**
      * 成功响应.
@@ -52,7 +52,7 @@ trait ApiResource
      *
      * @param  string  $msg  失败信息
      * @param  int  $code  失败码
-     * @param  int  $httpCode  http状态码
+     * @param  int|null  $httpCode  http状态码
      */
     final public function failed(string $msg = '操作失败', int $code = 400, ?int $httpCode = null): JsonResponse
     {
@@ -74,11 +74,11 @@ trait ApiResource
     /**
      * 分页响应.
      *
-     * @param  Builder  $query  数据库查询构造器
+     * @param  BuilderContract  $query  数据库查询构造器
      * @param  null|\Closure|string  $resource  资源转换类或者闭包
      * @param  array  $meta  额外的元数据
      */
-    final public function paginate(Builder $query, \Closure|string|null $resource = null, array $meta = []): JsonResponse
+    final public function paginate(BuilderContract $query, \Closure|string|null $resource = null, array $meta = []): JsonResponse
     {
         $data = [];
         $page = request()->integer('page', 1);

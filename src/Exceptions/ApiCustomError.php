@@ -3,11 +3,11 @@
 namespace Ugly\Base\Exceptions;
 
 use Illuminate\Http\JsonResponse;
-use Ugly\Base\Traits\ApiResource;
+use Ugly\Base\Traits\ApiResponse;
 
 class ApiCustomError extends \Exception
 {
-    use ApiResource;
+    use ApiResponse;
 
     protected ?int $httpCode;
 

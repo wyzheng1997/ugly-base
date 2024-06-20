@@ -6,7 +6,7 @@ ugly-base
 
 ### 功能清单
 - [x] json响应中间件`AcceptJson`
-- [x] 统一响应`ApiResource`
+- [x] 统一响应`ApiResponse`
 - [x] 扩展ORM搜索查询能力`SearchModel`
 - [x] 快速增删改控制器`FormController`
 - [x] 简单表单改控制器`SimpleFormController`

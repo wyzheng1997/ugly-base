@@ -8,14 +8,14 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 use Ugly\Base\Contracts\SimpleForm;
-use Ugly\Base\Traits\ApiResource;
+use Ugly\Base\Traits\ApiResponse;
 
 /**
  * 简单表单控制器.
  */
 class SimpleFormController extends Controller
 {
-    use ApiResource;
+    use ApiResponse;
 
     /**
      * 表单配置.
