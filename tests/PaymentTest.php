@@ -49,7 +49,7 @@ class PaymentTest extends TestCase
     {
         $this->payment->status = PaymentStatus::Success;
         $this->payment->save();
-        $res = $this->payment->refund(12.5)->send();
+        $res = Payment::refund($this->payment->no->id, 12.5)->send();
         $this->assertTrue($res === 'refund');
     }
 

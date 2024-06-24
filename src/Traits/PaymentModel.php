@@ -51,7 +51,7 @@ trait PaymentModel
      * @param  Model|Builder|null  $merchant  商户.
      */
     private static function defaultCreate(array $data, Model|Builder|null $payer = null,
-        Model|Builder|null $merchant = null): Model|Builder
+                                          Model|Builder|null $merchant = null): Model|Builder
     {
         return self::query()->create(array_merge([
             'no' => self::generateNo(),
@@ -76,8 +76,8 @@ trait PaymentModel
      * @param  Model|Builder|null  $merchant  商户.
      */
     public static function pay(string $channel, float $amount, string $job, ?string $order_no = null,
-        array $attach = [], Carbon|string|null $expired_at = null,
-        Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
+                               array $attach = [], Carbon|string|null $expired_at = null,
+                               Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
     {
         $expired_at = $expired_at ?: now()->addMinutes((int) config('ugly.payment.expire'));
         $data = compact('channel', 'amount', 'job', 'expired_at', 'order_no', 'attach');
@@ -89,6 +89,7 @@ trait PaymentModel
     /**
      * 支付单退款.
      *
+     * @param  int  $payment_id  付款记录ID.
      * @param  float  $amount  退款金额/元.
      * @param  string  $job  退款后需要执行的任务.
      * @param  array  $attach  附加信息.
@@ -97,21 +98,32 @@ trait PaymentModel
      *
      * @throws \Exception
      */
-    public function refund(float $amount, string $job = '', array $attach = [],
-        Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
+    public static function refund(int $payment_id, float $amount, string $job = '', array $attach = [],
+                                  Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
     {
-        if (
-            $this->getAttribute('status') !== PaymentStatus::Success ||
-            $this->getAttribute('type') !== PaymentType::Pay
-        ) {
+        $payment = self::query()
+            ->where('type', PaymentType::Pay)
+            ->where('status', PaymentStatus::Success)
+            ->find($payment_id);
+
+        if (empty($payment)) {
             throw new \Exception('支付单状态不正确！');
         }
 
+        // 支付单快照
+        $attach['original_info'] = [
+            'amount' => $payment->amount,
+            'no' => $payment->no,
+            'order_no' => $payment->order_no,
+            'notification_no' => $payment->notification_no,
+            'success_at' => $payment->success_at,
+        ];
+
         $data = compact('amount', 'job', 'attach');
         $data['type'] = PaymentType::Refund;
-        $data['channel'] = $this->getAttribute('channel');
-        $data['payment_id'] = $this->getKey();
-        $data['order_no'] = $this->getAttribute('order_no');
+        $data['channel'] = $payment->channel;
+        $data['payment_id'] = $payment_id;
+        $data['order_no'] = $payment->order_no;
 
         return self::defaultCreate($data, $payer, $merchant);
     }
@@ -127,7 +139,7 @@ trait PaymentModel
      * @param  Model|Builder|null  $merchant  商户.
      */
     public static function transfer(string $channel, float $amount, ?string $job = null, array $attach = [],
-        Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
+                                    Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
     {
         $data = compact('channel', 'amount', 'job', 'attach');
         $data['type'] = PaymentType::Transfer;
