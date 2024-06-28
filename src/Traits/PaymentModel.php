@@ -51,7 +51,7 @@ trait PaymentModel
      * @param  Model|Builder|null  $merchant  商户.
      */
     private static function defaultCreate(array $data, Model|Builder|null $payer = null,
-                                          Model|Builder|null $merchant = null): Model|Builder
+        Model|Builder|null $merchant = null): Model|Builder
     {
         return self::query()->create(array_merge([
             'no' => self::generateNo(),
@@ -76,8 +76,8 @@ trait PaymentModel
      * @param  Model|Builder|null  $merchant  商户.
      */
     public static function pay(string $channel, float $amount, string $job, ?string $order_no = null,
-                               array $attach = [], Carbon|string|null $expired_at = null,
-                               Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
+        array $attach = [], Carbon|string|null $expired_at = null,
+        Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
     {
         $expired_at = $expired_at ?: now()->addMinutes((int) config('ugly.payment.expire'));
         $data = compact('channel', 'amount', 'job', 'expired_at', 'order_no', 'attach');
@@ -99,7 +99,7 @@ trait PaymentModel
      * @throws \Exception
      */
     public static function refund(int $payment_id, float $amount, string $job = '', array $attach = [],
-                                  Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
+        Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
     {
         $payment = self::query()
             ->where('type', PaymentType::Pay)
@@ -139,7 +139,7 @@ trait PaymentModel
      * @param  Model|Builder|null  $merchant  商户.
      */
     public static function transfer(string $channel, float $amount, ?string $job = null, array $attach = [],
-                                    Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
+        Model|Builder|null $payer = null, Model|Builder|null $merchant = null): Model|Builder
     {
         $data = compact('channel', 'amount', 'job', 'attach');
         $data['type'] = PaymentType::Transfer;

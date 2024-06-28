@@ -10,9 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Amount implements CastsAttributes
 {
-    public function __construct(protected ?int $scale = 2)
-    {
-    }
+    public function __construct(protected ?int $scale = 2) {}
 
     /**
      * Cast the given value.
